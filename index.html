@@ -195,13 +195,14 @@
     </div>
 
     <script type="module">
-        // Importa as funções necessárias do Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
-
-        // ------------------------------------------------------------------
-        // --- COLE SUA CONFIGURAÇÃO DO FIREBASE AQUI EMBAIXO ---
-        // ------------------------------------------------------------------
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "firebase/app";
+        import { getAnalytics } from "firebase/analytics";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+        
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
         const firebaseConfig = {
           apiKey: "AIzaSyBaZMJ1wmsTXEQjmgiDtceUvzVHsfSslg0",
           authDomain: "financeiro-luique.firebaseapp.com",
@@ -211,11 +212,10 @@
           appId: "1:552706446904:web:4fcc0bc31811b82e4938cd",
           measurementId: "G-RN7JXL13D5"
         };
-        // ------------------------------------------------------------------
-
-        // Inicializa Firebase
+        
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        const analytics = getAnalytics(app);
         
         // Referência onde os dados serão salvos no banco (Pasta 'dados_henrique')
         const dbRef = ref(db, 'dados_henrique');
@@ -569,3 +569,4 @@
     </script>
 </body>
 </html>
+
