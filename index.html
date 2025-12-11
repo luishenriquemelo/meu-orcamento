@@ -3,166 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Orçamento Pessoal</title>
+    <title>Controle Financeiro & Cartão Compartilhado</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
 </head>
 <body>
 
-    <div class="app-container">
-        <nav class="sidebar">
-            <h2>💰 Orçamento</h2>
-            <ul>
-                <li class="active" onclick="showSection('dashboard')">
-                    <span class="material-icons-round">dashboard</span> Dashboard
-                </li>
-                <li onclick="showSection('transactions')">
-                    <span class="material-icons-round">receipt_long</span> Transações
-                </li>
-                <li onclick="showSection('categories')">
-                    <span class="material-icons-round">category</span> Categorias
-                </li>
-            </ul>
-        </nav>
-
-        <main class="main-content">
-            
-            <section id="dashboard" class="section active">
-                <header>
-                    <h1>Visão Geral</h1>
-                    <button class="btn-primary" onclick="openNewTransactionModal()">+ Nova Transação</button>
-                </header>
-
-                <div class="cards-container">
-                    <div class="card income">
-                        <h3>Receitas</h3>
-                        <p id="total-income">R$ 0,00</p>
-                    </div>
-                    <div class="card expense">
-                        <h3>Despesas</h3>
-                        <p id="total-expense">R$ 0,00</p>
-                    </div>
-                    <div class="card balance">
-                        <h3>Saldo Atual</h3>
-                        <p id="total-balance">R$ 0,00</p>
-                    </div>
+    <div class="container">
+        <aside>
+            <div class="top">
+                <div class="logo">
+                    <span class="material-icons-sharp">account_balance_wallet</span>
+                    <h2>Gestão<span class="danger">Cartão</span></h2>
                 </div>
-
-                <div class="charts-area">
-                    <div class="chart-card">
-                        <h3>Distribuição de Despesas</h3>
-                        <div class="canvas-container">
-                            <canvas id="expenseChart"></canvas>
-                        </div>
-                        <div id="chart-legend" class="chart-legend"></div>
-                    </div>
-                    <div class="chart-card">
-                        <h3>Alertas de Orçamento</h3>
-                        <ul id="budget-alerts" class="budget-list"></ul>
-                    </div>
-                </div>
-            </section>
-
-            <section id="transactions" class="section">
-                <header>
-                    <h1>Histórico de Transações</h1>
-                    <div class="filters">
-                        <select id="filter-month" onchange="renderTransactions()"></select>
-                        <select id="filter-year" onchange="renderTransactions()"></select>
-                    </div>
-                </header>
+            </div>
+            <div class="sidebar">
+                <a href="#" class="active">
+                    <span class="material-icons-sharp">grid_view</span>
+                    <h3>Dashboard</h3>
+                </a>
                 
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Descrição</th>
-                                <th>Categoria</th>
-                                <th>Valor</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="transaction-list">
-                            </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="categories" class="section">
-                <header>
-                    <h1>Gerenciar Categorias</h1>
-                </header>
-                
-                <div class="category-manager">
-                    <form id="category-form" onsubmit="saveCategory(event)">
-                        <input type="hidden" id="cat-id"> <div class="form-group">
-                            <label>Nome da Categoria</label>
-                            <input type="text" id="cat-name" required placeholder="Ex: Mercado">
-                        </div>
-                        <div class="form-group">
-                            <label>Tipo</label>
-                            <select id="cat-type">
-                                <option value="expense">Despesa</option>
-                                <option value="income">Receita</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Meta Mensal (R$)</label>
-                            <input type="number" id="cat-limit" step="0.01" value="0">
-                        </div>
-                        
-                        <div style="display: flex; gap: 10px;">
-                            <button type="submit" class="btn-secondary w-100" id="btn-save-cat">Adicionar Categoria</button>
-                            <button type="button" onclick="resetCategoryForm()" class="btn-secondary" style="background:#94a3b8; width: auto;" title="Cancelar">✕</button>
-                        </div>
-                    </form>
-
-                    <div class="category-list-container">
-                        <h3>Suas Categorias</h3>
-                        <ul id="category-list"></ul>
+                <div class="add-person-box">
+                    <h3>Cadastrar Novo Usuário</h3>
+                    <div class="input-group">
+                        <input type="text" id="new-person-name" placeholder="Ex: Márcio">
+                        <button onclick="addNewPerson()">+</button>
                     </div>
+                    <small>Adicione quem vai usar seu cartão.</small>
                 </div>
-            </section>
+            </div>
+        </aside>
+
+        <main>
+            <h1>Dashboard Financeiro</h1>
+
+            <div class="insights">
+                <div class="expenses">
+                    <span class="material-icons-sharp">bar_chart</span>
+                    <div class="middle">
+                        <div class="left">
+                            <h3>Total Gasto no Cartão</h3>
+                            <h1 id="total-amount">R$ 0,00</h1>
+                        </div>
+                    </div>
+                    <small class="text-muted">Soma de todas as faturas</small>
+                </div>
+                <div class="income">
+                    <span class="material-icons-sharp">person</span>
+                    <div class="middle">
+                        <div class="left">
+                            <h3>Meu Gasto Pessoal</h3>
+                            <h1 id="my-amount">R$ 0,00</h1>
+                        </div>
+                    </div>
+                    <small class="text-muted">Apenas o que é seu</small>
+                </div>
+                <div class="sales">
+                    <span class="material-icons-sharp">groups</span>
+                    <div class="middle">
+                        <div class="left">
+                            <h3>Gasto de Terceiros</h3>
+                            <h1 id="others-amount">R$ 0,00</h1>
+                        </div>
+                    </div>
+                    <small class="text-muted">Total que devem a você</small>
+                </div>
+            </div>
+
+            <div class="recent-orders">
+                <h2>Novo Lançamento</h2>
+                <form id="transaction-form">
+                    <div class="form-row">
+                        <div class="input-data">
+                            <label>Descrição (O que comprou?)</label>
+                            <input type="text" id="desc" placeholder="Ex: Tênis, Jantar, Netflix" required>
+                        </div>
+                        <div class="input-data">
+                            <label>Valor (R$)</label>
+                            <input type="number" id="amount" step="0.01" placeholder="0.00" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="input-data">
+                            <label>Quem gastou?</label>
+                            <select id="person-select">
+                                </select>
+                        </div>
+                        <div class="input-data">
+                            <label>Data</label>
+                            <input type="date" id="date" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit">Adicionar Lançamento</button>
+                </form>
+            </div>
+
+            <div class="recent-orders">
+                <h2>Histórico de Lançamentos</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Descrição</th>
+                            <th>Quem</th>
+                            <th>Valor</th>
+                            <th>Data</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactions-list">
+                        </tbody>
+                </table>
+            </div>
         </main>
-    </div>
 
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <h2 id="modal-title">Nova Transação</h2>
-            
-            <form id="transaction-form" onsubmit="saveTransaction(event)">
-                <input type="hidden" id="trans-id"> <div class="form-group">
-                    <label>Tipo</label>
-                    <div class="radio-group">
-                        <label><input type="radio" name="type" value="income" onchange="updateCategorySelect()" required> Receita</label>
-                        <label><input type="radio" name="type" value="expense" onchange="updateCategorySelect()" checked> Despesa</label>
+        <div class="right">
+            <div class="top">
+                <div class="profile">
+                    <div class="info">
+                        <p>Olá, <b>Admin</b></p>
+                        <small class="text-muted">Dono do Cartão</small>
                     </div>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label>Descrição</label>
-                    <input type="text" id="desc" required placeholder="Ex: Compra do Mês">
-                </div>
-
-                <div class="form-group">
-                    <label>Valor (R$)</label>
-                    <input type="number" id="amount" step="0.01" required placeholder="0,00">
-                </div>
-
-                <div class="form-group">
-                    <label>Categoria</label>
-                    <select id="category" required></select>
-                </div>
-
-                <div class="form-group">
-                    <label>Data</label>
-                    <input type="date" id="date" required>
-                </div>
-
-                <button type="submit" class="btn-primary w-100">Salvar</button>
-            </form>
+            <div class="sales-analytics">
+                <h2>Quem deve quanto?</h2>
+                <div id="people-summary">
+                    </div>
+            </div>
         </div>
     </div>
 
