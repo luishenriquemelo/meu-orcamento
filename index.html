@@ -1,137 +1,57 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Financeiro & Cartão Compartilhado</title>
+    <title>Controle Financeiro</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
 </head>
 <body>
-
     <div class="container">
-        <aside>
-            <div class="top">
-                <div class="logo">
-                    <span class="material-icons-sharp">account_balance_wallet</span>
-                    <h2>Gestão<span class="danger">Cartão</span></h2>
-                </div>
+        <h1>Controle Financeiro</h1>
+
+        <div class="card-usuario">
+            <h3>Cadastrar Novo Usuário</h3>
+            <div class="input-group">
+                <input type="text" id="novo-usuario-nome" placeholder="Ex: Alicia">
+                <button id="btn-add-usuario" title="Adicionar">+</button>
             </div>
-            <div class="sidebar">
-                <a href="#" class="active">
-                    <span class="material-icons-sharp">grid_view</span>
-                    <h3>Dashboard</h3>
-                </a>
+            <p class="hint">Adicione quem vai usar seu cartão.</p>
+        </div>
+
+        <hr>
+
+        <h3>Adicionar Transação</h3>
+        <form id="financial-form">
+            <div class="form-row">
+                <input type="text" id="description" placeholder="Descrição (Ex: Uber, Mercado)" required>
+                <input type="number" id="amount" placeholder="Valor (R$)" step="0.01" required>
+            </div>
+            
+            <div class="form-row">
+                <select id="type">
+                    <option value="expense">Saída (Gasto)</option>
+                    <option value="income">Entrada (Salário)</option>
+                </select>
                 
-                <div class="add-person-box">
-                    <h3>Cadastrar Novo Usuário</h3>
-                    <div class="input-group">
-                        <input type="text" id="new-person-name" placeholder="Ex: Márcio">
-                        <button onclick="addNewPerson()">+</button>
-                    </div>
-                    <small>Adicione quem vai usar seu cartão.</small>
-                </div>
-            </div>
-        </aside>
-
-        <main>
-            <h1>Dashboard Financeiro</h1>
-
-            <div class="insights">
-                <div class="expenses">
-                    <span class="material-icons-sharp">bar_chart</span>
-                    <div class="middle">
-                        <div class="left">
-                            <h3>Total Gasto no Cartão</h3>
-                            <h1 id="total-amount">R$ 0,00</h1>
-                        </div>
-                    </div>
-                    <small class="text-muted">Soma de todas as faturas</small>
-                </div>
-                <div class="income">
-                    <span class="material-icons-sharp">person</span>
-                    <div class="middle">
-                        <div class="left">
-                            <h3>Meu Gasto Pessoal</h3>
-                            <h1 id="my-amount">R$ 0,00</h1>
-                        </div>
-                    </div>
-                    <small class="text-muted">Apenas o que é seu</small>
-                </div>
-                <div class="sales">
-                    <span class="material-icons-sharp">groups</span>
-                    <div class="middle">
-                        <div class="left">
-                            <h3>Gasto de Terceiros</h3>
-                            <h1 id="others-amount">R$ 0,00</h1>
-                        </div>
-                    </div>
-                    <small class="text-muted">Total que devem a você</small>
-                </div>
+                <select id="user-select" required>
+                    <option value="" disabled selected>Quem gastou?</option>
+                    <option value="Eu">Eu (Pessoal)</option>
+                </select>
             </div>
 
-            <div class="recent-orders">
-                <h2>Novo Lançamento</h2>
-                <form id="transaction-form">
-                    <div class="form-row">
-                        <div class="input-data">
-                            <label>Descrição (O que comprou?)</label>
-                            <input type="text" id="desc" placeholder="Ex: Tênis, Jantar, Netflix" required>
-                        </div>
-                        <div class="input-data">
-                            <label>Valor (R$)</label>
-                            <input type="number" id="amount" step="0.01" placeholder="0.00" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="input-data">
-                            <label>Quem gastou?</label>
-                            <select id="person-select">
-                                </select>
-                        </div>
-                        <div class="input-data">
-                            <label>Data</label>
-                            <input type="date" id="date" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-submit">Adicionar Lançamento</button>
-                </form>
-            </div>
+            <button type="submit" class="btn-salvar">Salvar Transação</button>
+        </form>
 
-            <div class="recent-orders">
-                <h2>Histórico de Lançamentos</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Descrição</th>
-                            <th>Quem</th>
-                            <th>Valor</th>
-                            <th>Data</th>
-                            <th>Ação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactions-list">
-                        </tbody>
-                </table>
-            </div>
-        </main>
+        <div class="summary">
+            <h2>Resumo por Pessoa</h2>
+            <ul id="user-totals"></ul>
+            <p><strong>Total Geral Gasto:</strong> R$ <span id="total-expenses">0.00</span></p>
+        </div>
 
-        <div class="right">
-            <div class="top">
-                <div class="profile">
-                    <div class="info">
-                        <p>Olá, <b>Admin</b></p>
-                        <small class="text-muted">Dono do Cartão</small>
-                    </div>
-                </div>
-            </div>
-
-            <div class="sales-analytics">
-                <h2>Quem deve quanto?</h2>
-                <div id="people-summary">
-                    </div>
-            </div>
+        <div class="transactions">
+            <h2>Histórico</h2>
+            <ul id="transaction-list"></ul>
         </div>
     </div>
 
