@@ -1,4 +1,4 @@
-// --- ESTADO INICIAL ---
+// --- DADOS INICIAIS ---
 const defaultCategories = [
     { id: '1', name: 'Salário', type: 'income', limit: 0, color: '#10b981' },
     { id: '2', name: 'Freelance', type: 'income', limit: 0, color: '#34d399' },
@@ -21,11 +21,11 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTransactions();
     renderCategoryList();
     
-    // Define a data de hoje no input do modal
+    // Define a data de hoje no input escondido
     document.getElementById('date').valueAsDate = new Date();
 });
 
-// --- GERENCIAMENTO DE DADOS (LOCALSTORAGE) ---
+// --- PERSISTÊNCIA (LOCALSTORAGE) ---
 function saveData() {
     localStorage.setItem('budgetApp', JSON.stringify(appData));
     updateDashboard();
@@ -42,43 +42,37 @@ function loadData() {
 
 // --- NAVEGAÇÃO ---
 function showSection(sectionId) {
+    // Remove classe ativa de todas as seções e links
     document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.sidebar li').forEach(l => l.classList.remove('active'));
     
+    // Ativa a seção desejada
     document.getElementById(sectionId).classList.add('active');
     
-    // Hack simples para destacar o menu correto
+    // Ativa o menu correspondente
     const menuIndex = sectionId === 'dashboard' ? 0 : sectionId === 'transactions' ? 1 : 2;
     document.querySelectorAll('.sidebar li')[menuIndex].classList.add('active');
 }
 
 // --- DASHBOARD E CÁLCULOS ---
 function updateDashboard() {
-    // Filtro básico: Mês atual
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
+    // Filtra transações do mês atual
     const currentTrans = appData.transactions.filter(t => {
-        const d = new Date(t.date + 'T00:00:00'); // Fix timezone issue
+        const d = new Date(t.date + 'T00:00:00');
         return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
 
-    // Totais
-    const income = currentTrans
-        .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
+    const income = currentTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const expense = currentTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
 
-    const expense = currentTrans
-        .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-    // Atualiza DOM
     document.getElementById('total-income').innerText = formatCurrency(income);
     document.getElementById('total-expense').innerText = formatCurrency(expense);
     document.getElementById('total-balance').innerText = formatCurrency(income - expense);
 
-    // Gráfico e Alertas
     drawChart(currentTrans);
     checkBudgets(currentTrans);
 }
@@ -94,6 +88,7 @@ function checkBudgets(transactions) {
         }
     });
 
+    // Gera alertas para categorias de despesa com limite definido
     appData.categories.filter(c => c.type === 'expense' && c.limit > 0).forEach(cat => {
         const spent = expensesByCategory[cat.name] || 0;
         const percent = (spent / cat.limit) * 100;
@@ -109,20 +104,19 @@ function checkBudgets(transactions) {
     });
 }
 
-// --- GRÁFICO (CANVAS API) ---
+// --- GRÁFICO (PIZZA) ---
 function drawChart(transactions) {
     const canvas = document.getElementById('expenseChart');
     const ctx = canvas.getContext('2d');
     const legend = document.getElementById('chart-legend');
     
-    // Limpar
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     legend.innerHTML = '';
 
-    // Agrupar despesas por categoria
     const data = {};
     let total = 0;
     
+    // Agrupa despesas
     transactions.filter(t => t.type === 'expense').forEach(t => {
         data[t.category] = (data[t.category] || 0) + t.amount;
         total += t.amount;
@@ -131,11 +125,10 @@ function drawChart(transactions) {
     if (total === 0) {
         ctx.font = "14px Arial";
         ctx.textAlign = "center";
-        ctx.fillText("Sem dados este mês", canvas.width/2, canvas.height/2);
+        ctx.fillText("Sem despesas este mês", canvas.width/2, canvas.height/2);
         return;
     }
 
-    // Desenhar Pizza
     let startAngle = 0;
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -147,7 +140,7 @@ function drawChart(transactions) {
         const categoryObj = appData.categories.find(c => c.name === catName);
         const color = categoryObj ? categoryObj.color : '#ccc';
 
-        // Fatia
+        // Desenha fatia
         ctx.beginPath();
         ctx.moveTo(centerX, centerY);
         ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
@@ -157,7 +150,7 @@ function drawChart(transactions) {
 
         startAngle += sliceAngle;
 
-        // Legenda
+        // Cria legenda
         legend.innerHTML += `
             <div class="legend-item">
                 <div class="color-box" style="background:${color}"></div>
@@ -167,7 +160,8 @@ function drawChart(transactions) {
     });
 }
 
-// --- TRANSAÇÕES (CRUD) ---
+// --- LÓGICA DE TRANSAÇÕES (Adicionar, Editar, Excluir) ---
+
 function renderTransactions() {
     const tbody = document.getElementById('transaction-list');
     tbody.innerHTML = '';
@@ -175,6 +169,7 @@ function renderTransactions() {
     const filterMonth = parseInt(document.getElementById('filter-month').value);
     const filterYear = parseInt(document.getElementById('filter-year').value);
 
+    // Filtra e ordena por data (mais recente primeiro)
     const filtered = appData.transactions.filter(t => {
         const d = new Date(t.date + 'T00:00:00');
         return d.getMonth() === filterMonth && d.getFullYear() === filterYear;
@@ -191,8 +186,8 @@ function renderTransactions() {
             <td>${t.category}</td>
             <td class="${amountClass}">${sign} ${formatCurrency(t.amount)}</td>
             <td>
-                <button class="btn-action" onclick="editTransaction('${t.id}')">✎</button>
-                <button class="btn-action" onclick="deleteTransaction('${t.id}')" style="color:red">🗑</button>
+                <button class="btn-action" onclick="editTransaction('${t.id}')" title="Editar">✎</button>
+                <button class="btn-action" onclick="deleteTransaction('${t.id}')" style="color:red" title="Excluir">🗑</button>
             </td>
         `;
         tbody.appendChild(row);
@@ -215,46 +210,52 @@ function saveTransaction(e) {
     };
 
     if (id) {
+        // EDIÇÃO: Encontra e atualiza
         const index = appData.transactions.findIndex(t => t.id === id);
-        appData.transactions[index] = transaction;
+        if(index !== -1) appData.transactions[index] = transaction;
     } else {
+        // NOVA: Adiciona ao array
         appData.transactions.push(transaction);
     }
 
     saveData();
     closeModal();
-    document.getElementById('transaction-form').reset();
-}
-
-function deleteTransaction(id) {
-    if(confirm('Tem certeza que deseja excluir?')) {
-        appData.transactions = appData.transactions.filter(t => t.id !== id);
-        saveData();
-    }
 }
 
 function editTransaction(id) {
     const t = appData.transactions.find(t => t.id === id);
     if (!t) return;
 
+    // Preenche os campos do modal com os dados existentes
     document.getElementById('trans-id').value = t.id;
     document.getElementById('desc').value = t.desc;
     document.getElementById('amount').value = t.amount;
     document.getElementById('date').value = t.date;
     
+    // Marca o radio button correto
     const radios = document.getElementsByName('type');
     for(let r of radios) { 
         if(r.value === t.type) r.checked = true; 
     }
     
+    // Atualiza o select de categorias com base no tipo e seleciona a categoria certa
     updateCategorySelect();
     document.getElementById('category').value = t.category;
-    document.getElementById('modal-title').innerText = "Editar Transação";
     
-    openModal();
+    // Abre o modal em modo de edição
+    document.getElementById('modal-title').innerText = "Editar Transação";
+    document.getElementById('modal').style.display = 'flex';
 }
 
-// --- CATEGORIAS ---
+function deleteTransaction(id) {
+    if(confirm('Tem certeza que deseja excluir esta transação?')) {
+        appData.transactions = appData.transactions.filter(t => t.id !== id);
+        saveData();
+    }
+}
+
+// --- LÓGICA DE CATEGORIAS (Adicionar, Editar, Excluir) ---
+
 function renderCategoryList() {
     const list = document.getElementById('category-list');
     list.innerHTML = '';
@@ -263,46 +264,103 @@ function renderCategoryList() {
         const li = document.createElement('li');
         li.style.display = 'flex';
         li.style.justifyContent = 'space-between';
-        li.style.padding = '5px 0';
+        li.style.alignItems = 'center';
+        li.style.padding = '10px';
         li.style.borderBottom = '1px solid #eee';
+        li.style.background = '#fff';
+        
+        const colorIndicator = `<span style="display:inline-block; width:10px; height:10px; background:${cat.color}; border-radius:50%; margin-right:8px;"></span>`;
+
         li.innerHTML = `
-            <span>${cat.name} (${cat.type === 'income' ? 'Rec.' : 'Desp.'})</span>
-            <span>Meta: ${formatCurrency(cat.limit)}</span>
+            <div>
+                ${colorIndicator}
+                <strong>${cat.name}</strong> 
+                <small style="color:#666">(${cat.type === 'income' ? 'Rec.' : 'Desp.'})</small>
+                <div style="font-size: 0.85rem; color: #888;">Meta: ${formatCurrency(cat.limit)}</div>
+            </div>
+            <div>
+                <button class="btn-action" onclick="editCategory('${cat.id}')" title="Editar">✎</button>
+                <button class="btn-action" onclick="deleteCategory('${cat.id}')" style="color:red" title="Excluir">🗑</button>
+            </div>
         `;
         list.appendChild(li);
     });
 }
 
-function addCategory(e) {
+function saveCategory(e) {
     e.preventDefault();
+    const id = document.getElementById('cat-id').value;
     const name = document.getElementById('cat-name').value;
     const type = document.getElementById('cat-type').value;
     const limit = parseFloat(document.getElementById('cat-limit').value);
 
-    // Cor aleatória simples
-    const color = '#' + Math.floor(Math.random()*16777215).toString(16);
-
-    appData.categories.push({
-        id: Date.now().toString(),
-        name, type, limit, color
-    });
+    if (id) {
+        // Editar Categoria Existente
+        const index = appData.categories.findIndex(c => c.id === id);
+        if (index !== -1) {
+            appData.categories[index].name = name;
+            appData.categories[index].type = type;
+            appData.categories[index].limit = limit;
+        }
+    } else {
+        // Nova Categoria
+        const color = '#' + Math.floor(Math.random()*16777215).toString(16);
+        appData.categories.push({
+            id: Date.now().toString(),
+            name, type, limit, color
+        });
+    }
 
     saveData();
-    document.getElementById('category-form').reset();
+    resetCategoryForm();
 }
 
-// --- MODAL & UTILITÁRIOS ---
-function openModal() {
+function editCategory(id) {
+    const cat = appData.categories.find(c => c.id === id);
+    if (!cat) return;
+
+    document.getElementById('cat-id').value = cat.id;
+    document.getElementById('cat-name').value = cat.name;
+    document.getElementById('cat-type').value = cat.type;
+    document.getElementById('cat-limit').value = cat.limit;
+    
+    document.getElementById('btn-save-cat').innerText = "Atualizar Categoria";
+    document.querySelector('.category-manager').scrollIntoView({ behavior: 'smooth' });
+}
+
+function deleteCategory(id) {
+    if (confirm('Tem certeza? Se excluir, o histórico antigo permanecerá com o nome, mas a categoria sumirá das opções.')) {
+        appData.categories = appData.categories.filter(c => c.id !== id);
+        saveData();
+    }
+}
+
+function resetCategoryForm() {
+    document.getElementById('category-form').reset();
+    document.getElementById('cat-id').value = '';
+    document.getElementById('btn-save-cat').innerText = "Adicionar Categoria";
+}
+
+// --- FUNÇÕES AUXILIARES E MODAL ---
+
+function openNewTransactionModal() {
+    resetModalForm();
     document.getElementById('modal').style.display = 'flex';
-    updateCategorySelect();
 }
 
 function closeModal() {
     document.getElementById('modal').style.display = 'none';
+    resetModalForm();
+}
+
+function resetModalForm() {
     document.getElementById('trans-id').value = '';
     document.getElementById('modal-title').innerText = "Nova Transação";
     document.getElementById('transaction-form').reset();
     document.getElementById('date').valueAsDate = new Date();
+    // Reseta para despesa por padrão e atualiza categorias
+    document.querySelector('input[name="type"][value="expense"]').checked = true;
+    updateCategorySelect();
 }
 
 function updateCategorySelect() {
@@ -325,6 +383,11 @@ function setupFilters() {
     const yearSelect = document.getElementById('filter-year');
     
     const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    
+    // Limpa antes de preencher para evitar duplicação se chamado novamente
+    monthSelect.innerHTML = '';
+    yearSelect.innerHTML = '';
+
     months.forEach((m, i) => {
         const opt = document.createElement('option');
         opt.value = i;
@@ -348,6 +411,7 @@ function formatCurrency(value) {
 }
 
 function formatDate(dateString) {
+    // Corrige problema de fuso horário ao exibir
     const parts = dateString.split('-');
     return `${parts[2]}/${parts[1]}/${parts[0]}`;
 }
