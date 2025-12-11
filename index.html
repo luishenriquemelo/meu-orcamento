@@ -85,7 +85,7 @@
             background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: none; overflow: hidden;
         }
         .bank-header { 
-            display: flex; justify-content: space-between; width: 100%; font-size: 15px; font-weight: bold; color: #fff; 
+            display: flex; justify-content: space-between; width: 100%; font-size: 14px; font-weight: bold; color: #fff; 
             padding: 10px 15px; 
         }
         .bank-people-list { width: 100%; font-size: 13px; color: #555; padding: 10px 15px; }
@@ -217,7 +217,7 @@
     <script>
         // --- 1. CONFIGURAÇÕES E DADOS ---
         
-        // Cores dos Bancos (Configuração Visual)
+        // Cores dos Bancos
         const bankColors = {
             'Nubank': '#820ad1',          // Roxo
             'Bradesco': '#cc092f',        // Vermelho
@@ -229,11 +229,21 @@
             'default': '#555555'          // Cinza padrão
         };
 
+        // Datas de Vencimento
+        const bankDueDates = {
+            'Bradesco': '08',
+            'Mercado Pago': '08',
+            'Itaú Uniclass': '10',
+            'Nubank': '09',
+            'Azul Platinum': '15',
+            'Azul Gold': '17',
+            'Pão de Açúcar': '18'
+        };
+
         const defaultBanks = Object.keys(bankColors).filter(b => b !== 'default');
 
-        // Carregamento do LocalStorage
+        // Dados do LocalStorage
         let users = JSON.parse(localStorage.getItem('fin_users')) || [];
-        // NOTA: transações agora guardarão a data em formato ISO (YYYY-MM-DD) para facilitar filtro
         let transactions = JSON.parse(localStorage.getItem('fin_transactions')) || [];
         let banks = JSON.parse(localStorage.getItem('fin_banks'));
 
@@ -281,8 +291,6 @@
             const desc = document.getElementById('desc').value;
             let amountStr = document.getElementById('amount').value.replace(',', '.');
             const totalAmount = parseFloat(amountStr);
-            
-            // Pega numero de parcelas
             const installments = parseInt(document.getElementById('installments').value) || 1;
 
             if (isNaN(totalAmount) || totalAmount <= 0) { alert("Valor inválido"); return; }
@@ -292,73 +300,55 @@
             const bank = document.getElementById('bank-select').value;
             let method = document.getElementById('method-credit').checked ? 'credit' : 'debit';
 
-            // Lógica de Parcelamento
             const installmentValue = totalAmount / installments;
             const today = new Date();
 
             for (let i = 0; i < installments; i++) {
-                // Calcula a data da parcela (mês atual + i)
                 const date = new Date(today.getFullYear(), today.getMonth() + i, today.getDate());
-                
-                // Formata data para YYYY-MM-DD (padrão ISO) para facilitar filtro
                 const isoDate = date.toISOString().split('T')[0];
                 const ptDate = date.toLocaleDateString('pt-BR');
-
-                // Descrição com contador de parcela (ex: TV 1/10)
                 const descText = installments > 1 ? `${desc} (${i+1}/${installments})` : desc;
 
                 transactions.push({
-                    id: Date.now() + i, // ID único sequencial
+                    id: Date.now() + i, 
                     desc: descText, 
                     amount: installmentValue, 
                     type, user, bank, method,
-                    date: isoDate,      // Data usada para filtrar
-                    displayDate: ptDate // Data usada para mostrar
+                    date: isoDate,      
+                    displayDate: ptDate 
                 });
             }
 
             saveData();
             updateScreen();
             
-            // Limpa form
             document.getElementById('desc').value = '';
             document.getElementById('amount').value = '';
             document.getElementById('installments').value = '1';
         });
 
-        // --- 3. ATUALIZAR TELA (COM CORES E FILTRO) ---
+        // --- 3. ATUALIZAR TELA ---
         function updateScreen() {
             elList.innerHTML = ''; 
             elSplit.innerHTML = '';
             
-            let wallet = 0; // Saldo de débito (Acumula TUDO, independente do mês, pois é saldo de conta)
-            let invoice = 0; // Fatura (Apenas do MÊS SELECIONADO)
-            
-            // Pega o mês selecionado no filtro (YYYY-MM)
+            let wallet = 0; 
+            let invoice = 0; 
             const selectedMonth = elMonthFilter.value; 
-
             let bankConsolidation = {};
 
-            // 1. Calcular Saldo de Débito Geral (Considera todas as entradas e saídas de débito passadas e futuras? 
-            // Geralmente saldo é temporal. Para simplificar: Saldo mostra TUDO que já aconteceu ou vai acontecer de entrada/débito
-            // Mas Fatura mostra só o mês.)
-            // Vamos filtrar Débito também? Melhor não, saldo é acumulativo. 
-            // Mas para o extrato visual, vamos mostrar só o mês.
-            
-            // Loop para CALCULAR SALDO TOTAL (Carteira)
+            // Saldo Total (Todas as datas)
             transactions.forEach(t => {
                 if (t.type === 'income') wallet += t.amount;
                 if (t.type === 'expense' && t.method === 'debit') wallet -= t.amount;
             });
 
-            // Loop para EXIBIR DADOS DO MÊS (Extrato e Fatura)
+            // Filtro do Mês
             const filteredTransactions = transactions.filter(t => t.date.startsWith(selectedMonth));
-            
-            // Ordenar por dia
             filteredTransactions.sort((a,b) => a.date.localeCompare(b.date));
 
             filteredTransactions.forEach(t => {
-                // Render Lista Histórico
+                // Lista
                 const li = document.createElement('li');
                 if(t.type === 'income') li.className = 'income';
                 else if(t.method === 'credit') li.className = 'expense-credit';
@@ -371,13 +361,11 @@
                 li.innerHTML = `<div><strong>${t.desc} ${label}</strong><small style="color:#777">${t.user} | ${displayBank} | ${t.displayDate}</small></div>
                                 <div style="display:flex;align-items:center;gap:10px;"><span style="font-weight:bold">${sign} R$ ${t.amount.toFixed(2)}</span>
                                 <button class="btn-delete" onclick="removeTrans(${t.id})"><i class="fas fa-trash"></i></button></div>`;
-                elList.prepend(li); // Mais recentes no topo (do mês)
+                elList.prepend(li); 
 
-                // Cálculos da Fatura do Mês
+                // Consolidação de Fatura
                 if (t.type === 'expense' && t.method === 'credit') {
                     invoice += t.amount;
-                    
-                    // Consolidação por Banco
                     const bName = t.bank || 'Outros';
                     if (!bankConsolidation[bName]) {
                         bankConsolidation[bName] = { total: 0, users: {} };
@@ -393,17 +381,18 @@
             elWallet.innerText = `R$ ${wallet.toFixed(2)}`;
             elInvoice.innerText = `R$ ${invoice.toFixed(2)}`;
 
-            // --- RENDERIZAR CONSOLIDAÇÃO POR BANCO COM CORES ---
+            // Renderizar Consolidação
             for (const [bankName, data] of Object.entries(bankConsolidation)) {
                 if (data.total > 0) {
                     const li = document.createElement('li');
                     li.className = 'bank-summary-item';
                     
-                    // Pega a cor do banco ou usa default
                     const bgColor = bankColors[bankName] || bankColors['default'];
+                    // Adiciona o dia de vencimento se existir
+                    const dueDate = bankDueDates[bankName] ? ` - Dia ${bankDueDates[bankName]}` : '';
 
                     let html = `<div class="bank-header" style="background-color: ${bgColor}">
-                                    <span>${bankName}</span>
+                                    <span>${bankName}${dueDate}</span>
                                     <span>R$ ${data.total.toFixed(2)}</span>
                                 </div>`;
                     
@@ -459,7 +448,6 @@
             banks.forEach(b => {
                 const div = document.createElement('div');
                 div.className = 'tag';
-                // Adiciona uma bolinha colorida na tag se tiver cor definida
                 const dotColor = bankColors[b] || '#ccc';
                 div.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block;margin-right:4px;"></span>${b} <span class="tag-delete" onclick="removeBank('${b}')">&times;</span>`;
                 elBanksList.appendChild(div);
