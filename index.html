@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Financeiro Definitivo</title>
+    <title>Controle Financeiro - Henrique</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
@@ -126,7 +126,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>Gestão Financeira & Cartão</h1>
+            <h1>Controle Financeiro do Henrique</h1>
         </header>
 
         <div class="dashboard-grid">
@@ -193,7 +193,7 @@
                             <div class="form-control half">
                                 <label>Quem foi?</label>
                                 <select id="user-select" onchange="checkUserMethod()">
-                                    <option value="Eu">Eu (Pessoal)</option>
+                                    <option value="Henrique">Henrique</option>
                                 </select>
                             </div>
                         </div>
@@ -220,7 +220,7 @@
                     <h3><i class="fas fa-chart-pie"></i> Rateio da Fatura (Quem deve?)</h3>
                     <ul id="invoice-split-list" class="list-users"></ul>
                     <div style="text-align: right; margin-top:15px; color:#555; border-top: 1px solid #eee; padding-top: 10px;">
-                        Minha parte na fatura: <strong id="my-invoice-part">R$ 0.00</strong>
+                        Parte do Henrique: <strong id="my-invoice-part">R$ 0.00</strong>
                     </div>
                 </div>
 
@@ -350,8 +350,8 @@
                         // Se pagou no CRÉDITO, soma na FATURA
                         invoice += t.amount;
                         
-                        // Verifica de quem é a dívida
-                        if(t.user === 'Eu') {
+                        // Verifica de quem é a dívida (AGORA USANDO HENRIQUE)
+                        if(t.user === 'Henrique') {
                             myInvoice += t.amount;
                         } else if (othersInvoice[t.user] !== undefined) {
                             othersInvoice[t.user] += t.amount;
@@ -377,10 +377,10 @@
 
         // --- 6. FUNÇÕES AUXILIARES ---
 
-        // Se escolher outra pessoa, marca automaticamente "Crédito"
+        // Se escolher outra pessoa (que não seja o Henrique), marca automaticamente "Crédito"
         function checkUserMethod() {
             const u = elUserSelect.value;
-            if(u !== 'Eu') {
+            if(u !== 'Henrique') {
                 document.getElementById('method-credit').checked = true;
             }
         }
@@ -427,8 +427,8 @@
 
         // Atualizar os menus (selects)
         function updateDropdowns() {
-            // Select de Usuários
-            elUserSelect.innerHTML = '<option value="Eu">Eu (Pessoal)</option>';
+            // Select de Usuários (AGORA MOSTRA HENRIQUE)
+            elUserSelect.innerHTML = '<option value="Henrique">Henrique</option>';
             users.forEach(u => {
                 const opt = document.createElement('option');
                 opt.value = u; opt.innerText = u;
