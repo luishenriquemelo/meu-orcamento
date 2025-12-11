@@ -1,173 +1,249 @@
-// Captura elementos
-const balance = document.getElementById('balance');
-const money_plus = document.getElementById('money-plus');
-const money_minus = document.getElementById('money-minus');
-const list = document.getElementById('list');
-const usersList = document.getElementById('users-list');
+// --- ELEMENTOS ---
+const walletBalanceEl = document.getElementById('wallet-balance');
+const invoiceTotalEl = document.getElementById('invoice-total');
+const myInvoicePartEl = document.getElementById('my-invoice-part');
+const list = document.getElementById('transactions-list');
+const invoiceSplitList = document.getElementById('invoice-split-list');
 const form = document.getElementById('form');
-const text = document.getElementById('text');
-const amount = document.getElementById('amount');
-const transType = document.getElementById('trans-type');
 const userSelect = document.getElementById('user-select');
+const categorySelect = document.getElementById('category-select');
+const categoriesListEl = document.getElementById('categories-list');
 
-// Novos elementos de Usuário
-const inputNovoUsuario = document.getElementById('novo-usuario-nome');
-const btnAddUsuario = document.getElementById('btn-add-usuario');
+// Inputs de Cadastro
+const inputNewUser = document.getElementById('new-user-name');
+const btnAddUser = document.getElementById('btn-add-user');
+const inputNewCategory = document.getElementById('new-category-name');
+const btnAddCategory = document.getElementById('btn-add-category');
 
-// --- DADOS (LocalStorage) ---
-let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-let usersDB = JSON.parse(localStorage.getItem('usersDB')) || [];
+// Inputs de Transação
+const descInput = document.getElementById('desc');
+const amountInput = document.getElementById('amount');
+const typeInput = document.getElementById('trans-type');
+const methodInputs = document.getElementsByName('method'); // Radio buttons
 
-// --- FUNÇÕES DE USUÁRIO ---
+// --- ESTADO (DADOS) ---
+// Tenta carregar ou inicia vazio
+let transactions = JSON.parse(localStorage.getItem('transactions_v2')) || [];
+let users = JSON.parse(localStorage.getItem('users_v2')) || [];
+let categories = JSON.parse(localStorage.getItem('categories_v2')) || ['Alimentação', 'Transporte', 'Lazer', 'Contas Fixas', 'Saúde'];
 
-// Atualiza o Select e a Lista de Rateio
-function updateUsersUI() {
-    // 1. Atualiza o Select do formulário
-    userSelect.innerHTML = `
-        <option value="" disabled selected>Selecione...</option>
-        <option value="Eu">Eu (Pessoal)</option>
-    `;
-    usersDB.forEach(user => {
+// --- FUNÇÕES DE SETUP E UI ---
+
+// Atualiza Dropdowns (Usuários e Categorias)
+function updateDropdowns() {
+    // 1. Usuários
+    userSelect.innerHTML = '<option value="Eu">Eu (Pessoal)</option>';
+    users.forEach(user => {
         const option = document.createElement('option');
         option.value = user;
         option.innerText = user;
         userSelect.appendChild(option);
     });
+
+    // 2. Categorias Select
+    categorySelect.innerHTML = '';
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.innerText = cat;
+        categorySelect.appendChild(option);
+    });
+
+    // 3. Painel de Tags de Categorias
+    categoriesListEl.innerHTML = '';
+    categories.forEach(cat => {
+        const tag = document.createElement('div');
+        tag.classList.add('tag');
+        tag.innerHTML = `${cat} <span class="tag-delete" onclick="removeCategory('${cat}')">&times;</span>`;
+        categoriesListEl.appendChild(tag);
+    });
 }
 
-// Adicionar Novo Usuário
-btnAddUsuario.addEventListener('click', () => {
-    const nome = inputNovoUsuario.value.trim();
-    if (nome === "") {
-        alert("Digite um nome!");
-        return;
+// --- INTEGRAÇÃO LÓGICA (O PULO DO GATO) ---
+// Quando muda o usuário, se não for "Eu", força Cartão de Crédito
+userSelect.addEventListener('change', (e) => {
+    const selectedUser = e.target.value;
+    if (selectedUser !== 'Eu') {
+        document.getElementById('method-credit').checked = true;
+        // Desabilita opção de débito para outros (opcional, mas evita erro)
+        document.getElementById('method-debit').disabled = true;
+    } else {
+        document.getElementById('method-debit').disabled = false;
     }
-    if (usersDB.includes(nome)) {
-        alert("Usuário já existe!");
-        return;
-    }
-
-    usersDB.push(nome);
-    localStorage.setItem('usersDB', JSON.stringify(usersDB));
-    updateUsersUI();
-    updateValues(); // Atualiza rateio para aparecer o nome novo com zero
-    inputNovoUsuario.value = "";
 });
 
-// --- FUNÇÕES FINANCEIRAS ---
+// --- TRANSAÇÕES ---
 
 function addTransaction(e) {
     e.preventDefault();
 
-    if (text.value.trim() === '' || amount.value.trim() === '' || !userSelect.value) {
-        alert('Por favor, preencha a descrição, valor e quem gastou.');
+    const description = descInput.value.trim();
+    const amount = +amountInput.value;
+    const type = typeInput.value;
+    const user = userSelect.value;
+    const category = categorySelect.value;
+    
+    // Pega qual radio button está marcado (credit ou debit)
+    let method = 'debit'; 
+    for(const rb of methodInputs) {
+        if(rb.checked) method = rb.value;
+    }
+
+    if(description === '' || amount === 0) {
+        alert("Preencha descrição e valor.");
         return;
     }
 
     const transaction = {
-        id: generateID(),
-        text: text.value,
-        amount: +amount.value, // converte string para numero
-        type: transType.value, // 'income' ou 'expense'
-        user: userSelect.value
+        id: Date.now(),
+        desc: description,
+        amount: amount,
+        type: type, // 'income' ou 'expense'
+        user: user,
+        category: category,
+        method: method // 'debit' ou 'credit'
     };
 
     transactions.push(transaction);
-    addTransactionDOM(transaction);
-    updateValues();
-    updateLocalStorage();
-
-    text.value = '';
-    amount.value = '';
-}
-
-// Gera ID aleatório
-function generateID() {
-    return Math.floor(Math.random() * 100000000);
-}
-
-// Adiciona transação na lista visual (Histórico)
-function addTransactionDOM(transaction) {
-    const sign = transaction.type === 'expense' ? '-' : '+';
-    const item = document.createElement('li');
-
-    // Define a classe CSS baseada no tipo
-    item.classList.add(transaction.type === 'expense' ? 'minus' : 'plus');
-
-    item.innerHTML = `
-        <div style="display:flex; flex-direction:column;">
-            <strong>${transaction.text}</strong>
-            <small style="color:#777">${transaction.user}</small>
-        </div>
-        <div>
-            <span>${sign} R$ ${Math.abs(transaction.amount).toFixed(2)}</span>
-            <button class="delete-btn" onclick="removeTransaction(${transaction.id})"><i class="fas fa-trash"></i></button>
-        </div>
-    `;
-
-    list.prepend(item); // Adiciona no topo
-}
-
-// Atualiza os Totais (Dashboard e Rateio)
-function updateValues() {
-    // 1. Cálculos Gerais (Entradas e Saídas)
-    const amounts_income = transactions
-        .filter(t => t.type === 'income')
-        .map(t => t.amount);
+    saveData();
+    updateScreen();
     
-    const amounts_expense = transactions
-        .filter(t => t.type === 'expense')
-        .map(t => t.amount);
-
-    const totalIncome = amounts_income.reduce((acc, item) => (acc += item), 0);
-    const totalExpense = amounts_expense.reduce((acc, item) => (acc += item), 0);
-    const totalBalance = totalIncome - totalExpense;
-
-    balance.innerText = `R$ ${totalBalance.toFixed(2)}`;
-    money_plus.innerText = `+ R$ ${totalIncome.toFixed(2)}`;
-    money_minus.innerText = `- R$ ${totalExpense.toFixed(2)}`;
-
-    // 2. Cálculo do Rateio (Quem deve quanto - Apenas Saídas)
-    usersList.innerHTML = '';
-    
-    // Lista de todos usuários (Eu + Extras)
-    const allUsers = ['Eu', ...usersDB];
-    
-    allUsers.forEach(user => {
-        // Soma gastos desse usuário
-        const userSpend = transactions
-            .filter(t => t.user === user && t.type === 'expense')
-            .reduce((acc, t) => acc + t.amount, 0);
-
-        if (userSpend > 0 || user !== 'Eu') { // Mostra se gastou algo ou se é usuário extra
-             const li = document.createElement('li');
-             li.innerHTML = `
-                <span>${user}</span>
-                <strong>R$ ${userSpend.toFixed(2)}</strong>
-             `;
-             usersList.appendChild(li);
-        }
-    });
+    // Limpar form
+    descInput.value = '';
+    amountInput.value = '';
 }
 
 function removeTransaction(id) {
-    transactions = transactions.filter(transaction => transaction.id !== id);
-    updateLocalStorage();
-    init();
+    transactions = transactions.filter(t => t.id !== id);
+    saveData();
+    updateScreen();
 }
 
-function updateLocalStorage() {
-    localStorage.setItem('transactions', JSON.stringify(transactions));
-}
+// --- CÁLCULOS PRINCIPAIS ---
 
-function init() {
+function updateScreen() {
     list.innerHTML = '';
-    transactions.forEach(addTransactionDOM);
-    updateUsersUI();
-    updateValues();
+    invoiceSplitList.innerHTML = '';
+
+    let walletTotal = 0; // Salário + Entradas - Saídas no Débito
+    let invoiceTotal = 0; // Soma de tudo que é Crédito
+    let myInvoiceTotal = 0; // Quanto EU gastei no crédito
+    let othersInvoice = {}; // Objeto para somar gastos dos outros
+
+    // Inicializa o objeto de rateio para os usuários cadastrados
+    users.forEach(u => othersInvoice[u] = 0);
+
+    transactions.forEach(t => {
+        // 1. Renderizar Lista
+        const li = document.createElement('li');
+        // Define classe CSS
+        if(t.type === 'income') li.classList.add('income');
+        else if(t.method === 'credit') li.classList.add('expense-credit');
+        else li.classList.add('expense-debit');
+
+        const labelMethod = t.method === 'credit' ? '<span class="badge-credit">Cartão</span>' : '';
+        const sign = t.type === 'expense' ? '-' : '+';
+
+        li.innerHTML = `
+            <div class="transaction-info">
+                <strong>${t.desc} ${labelMethod}</strong>
+                <small>${t.user} | ${t.category} | ${t.date ? t.date : 'Hoje'}</small>
+            </div>
+            <div style="display:flex; align-items:center;">
+                <span class="transaction-amount">${sign} R$ ${t.amount.toFixed(2)}</span>
+                <button class="delete-btn" onclick="removeTransaction(${t.id})"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        list.prepend(li); // Adiciona no topo
+
+        // 2. Matemática Financeira
+        if (t.type === 'income') {
+            // Entrada sempre vai pra conta/carteira
+            walletTotal += t.amount;
+        } else {
+            // É DESPESA
+            if (t.method === 'debit') {
+                // Se pagou no débito, sai da carteira na hora
+                walletTotal -= t.amount;
+            } else {
+                // Se é Crédito, soma na FATURA
+                invoiceTotal += t.amount;
+                
+                // Separa quem gastou no crédito
+                if(t.user === 'Eu') {
+                    myInvoiceTotal += t.amount;
+                } else {
+                    if(!othersInvoice[t.user]) othersInvoice[t.user] = 0;
+                    othersInvoice[t.user] += t.amount;
+                }
+            }
+        }
+    });
+
+    // Atualiza Dashboard
+    walletBalanceEl.innerText = `R$ ${walletTotal.toFixed(2)}`;
+    invoiceTotalEl.innerText = `R$ ${invoiceTotal.toFixed(2)}`;
+    
+    // Atualiza Rateio (Quem deve no cartão)
+    for (const [nome, valor] of Object.entries(othersInvoice)) {
+        if (valor > 0) {
+            const li = document.createElement('li');
+            li.innerHTML = `<span>${nome}</span> <strong>R$ ${valor.toFixed(2)}</strong>`;
+            invoiceSplitList.appendChild(li);
+        }
+    }
+    
+    myInvoicePartEl.innerText = `R$ ${myInvoiceTotal.toFixed(2)}`;
 }
 
-form.addEventListener('submit', addTransaction);
+// --- CADASTROS AUXILIARES ---
 
-// Inicializa o app
-init();
+// Adicionar Usuário
+btnAddUser.addEventListener('click', () => {
+    const name = inputNewUser.value.trim();
+    if(name && !users.includes(name)) {
+        users.push(name);
+        saveData();
+        updateDropdowns();
+        inputNewUser.value = '';
+    }
+});
+
+// Adicionar Categoria
+btnAddCategory.addEventListener('click', () => {
+    const cat = inputNewCategory.value.trim();
+    if(cat && !categories.includes(cat)) {
+        categories.push(cat);
+        saveData();
+        updateDropdowns();
+        inputNewCategory.value = '';
+    }
+});
+
+// Remover Categoria
+window.removeCategory = function(catName) {
+    if(confirm(`Remover categoria ${catName}?`)) {
+        categories = categories.filter(c => c !== catName);
+        saveData();
+        updateDropdowns();
+    }
+}
+
+// Persistência
+function saveData() {
+    localStorage.setItem('transactions_v2', JSON.stringify(transactions));
+    localStorage.setItem('users_v2', JSON.stringify(users));
+    localStorage.setItem('categories_v2', JSON.stringify(categories));
+}
+
+// Limpar Tudo (Reset)
+document.getElementById('btn-clear-all').addEventListener('click', () => {
+    if(confirm("Tem certeza? Isso apagará TUDO.")) {
+        localStorage.clear();
+        location.reload();
+    }
+});
+
+// Inicialização
+updateDropdowns();
+updateScreen();

@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Financeiro Pro</title>
+    <title>Controle Financeiro Master</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Controle Financeiro</h1>
+            <h1>Gestão Financeira & Cartão</h1>
         </header>
 
-        <div class="dashboard">
-            <div class="card income">
-                <h3>Entradas</h3>
-                <p id="money-plus" class="money plus">+ R$ 0.00</p>
+        <div class="dashboard-grid">
+            <div class="card balance-card">
+                <h3><i class="fas fa-wallet"></i> Minha Carteira (Débito/Salário)</h3>
+                <p id="wallet-balance" class="money">R$ 0.00</p>
+                <small>Disponível para uso imediato</small>
             </div>
-            <div class="card expense">
-                <h3>Saídas (Cartão)</h3>
-                <p id="money-minus" class="money minus">- R$ 0.00</p>
-            </div>
-            <div class="card balance">
-                <h3>Saldo Atual</h3>
-                <p id="balance" class="money">R$ 0.00</p>
+            
+            <div class="card invoice-card">
+                <h3><i class="fas fa-credit-card"></i> Fatura Atual do Cartão</h3>
+                <p id="invoice-total" class="money minus">R$ 0.00</p>
+                <small>Total acumulado (Eu + Outros)</small>
             </div>
         </div>
 
@@ -32,26 +31,44 @@
             
             <div class="column form-column">
                 
-                <div class="box-clean">
-                    <h3><i class="fas fa-user-plus"></i> Novo Usuário</h3>
-                    <div class="input-group-user">
-                        <input type="text" id="novo-usuario-nome" placeholder="Nome (Ex: Márcio)">
-                        <button id="btn-add-usuario" class="btn-purple"><i class="fas fa-plus"></i></button>
+                <div class="box-clean collapsed-mobile">
+                    <h3><i class="fas fa-users"></i> Usuários do Cartão</h3>
+                    <div class="input-group-row">
+                        <input type="text" id="new-user-name" placeholder="Nome (Ex: Mãe)">
+                        <button id="btn-add-user" class="btn-icon"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
 
                 <div class="box-clean">
-                    <h3>Nova Transação</h3>
+                    <h3><i class="fas fa-tags"></i> Categorias</h3>
+                    <div class="tags-container" id="categories-list">
+                        </div>
+                    <div class="input-group-row" style="margin-top:10px;">
+                        <input type="text" id="new-category-name" placeholder="Nova Categoria (Ex: iFood)">
+                        <button id="btn-add-category" class="btn-icon"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <div class="box-clean highlight-box">
+                    <h3>Nova Movimentação</h3>
                     <form id="form">
                         <div class="form-control">
                             <label>Descrição</label>
-                            <input type="text" id="text" placeholder="Ex: Salário, Uber, Mercado..." required>
-                        </div>
-                        <div class="form-control">
-                            <label>Valor (R$)</label>
-                            <input type="number" id="amount" placeholder="0.00" step="0.01" required>
+                            <input type="text" id="desc" placeholder="Ex: Salário, Pizza, Uber..." required>
                         </div>
                         
+                        <div class="row-inputs">
+                            <div class="form-control half">
+                                <label>Valor (R$)</label>
+                                <input type="number" id="amount" placeholder="0.00" step="0.01" required>
+                            </div>
+                            <div class="form-control half">
+                                <label>Categoria</label>
+                                <select id="category-select" required>
+                                    </select>
+                            </div>
+                        </div>
+
                         <div class="row-inputs">
                             <div class="form-control half">
                                 <label>Tipo</label>
@@ -61,14 +78,25 @@
                                 </select>
                             </div>
                             <div class="form-control half">
-                                <label>Quem?</label>
+                                <label>Responsável</label>
                                 <select id="user-select" required>
-                                    <option value="" disabled selected>Selecione...</option>
                                     <option value="Eu">Eu (Pessoal)</option>
                                 </select>
                             </div>
                         </div>
-                        <button class="btn-save">Adicionar Transação</button>
+
+                        <div class="form-control" id="payment-method-group">
+                            <label>Método de Pagamento</label>
+                            <div class="radio-group">
+                                <input type="radio" id="method-debit" name="method" value="debit" checked>
+                                <label for="method-debit" class="radio-label"><i class="fas fa-money-bill-wave"></i> Débito/Dinheiro</label>
+                                
+                                <input type="radio" id="method-credit" name="method" value="credit">
+                                <label for="method-credit" class="radio-label"><i class="fas fa-credit-card"></i> Cartão de Crédito</label>
+                            </div>
+                        </div>
+
+                        <button class="btn-save">Registrar</button>
                     </form>
                 </div>
             </div>
@@ -76,16 +104,21 @@
             <div class="column list-column">
                 
                 <div class="box-clean">
-                    <h3><i class="fas fa-chart-pie"></i> Gastos por Pessoa (Cartão)</h3>
-                    <ul id="users-list" class="list-users">
+                    <h3><i class="fas fa-chart-pie"></i> Rateio da Fatura (Quem deve?)</h3>
+                    <ul id="invoice-split-list" class="list-users">
                         </ul>
+                    <div class="invoice-summary">
+                        <p>Minha parte na fatura: <strong id="my-invoice-part">R$ 0.00</strong></p>
+                    </div>
                 </div>
 
                 <div class="box-clean">
-                    <h3>Histórico Recente</h3>
-                    <ul id="list" class="list">
+                    <h3>Extrato Completo</h3>
+                    <ul id="transactions-list" class="list">
                         </ul>
                 </div>
+
+                <button id="btn-clear-all" style="background:#ccc; color:#333; width:100%; border:none; padding:10px; border-radius:5px; margin-top:20px; cursor:pointer;">Limpar Todos os Dados (Reset)</button>
             </div>
         </div>
     </div>
