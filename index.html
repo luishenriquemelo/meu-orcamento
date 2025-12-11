@@ -12,45 +12,72 @@
         :root { --purple: #6c63ff; --green: #2ecc71; --orange: #f39c12; --red: #e74c3c; --bg: #f0f2f5; --text: #333; }
         * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
         body { background-color: var(--bg); font-family: 'Poppins', sans-serif; color: var(--text); padding: 20px; }
+        
         .container { width: 100%; max-width: 1000px; margin: 0 auto; }
         header { text-align: center; margin-bottom: 25px; }
+        
+        /* Dashboard */
         .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; }
         .money { font-size: 28px; font-weight: bold; margin: 10px 0; }
         .balance-card .money { color: var(--green); }
         .invoice-card .money { color: var(--orange); }
+        
+        /* Layout */
         .main-content { display: flex; flex-wrap: wrap; gap: 20px; }
         .column { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* Boxes */
         .box-clean { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .box-clean h3 { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; font-size: 16px; color: #555; display: flex; align-items: center; gap: 8px; }
+        
+        /* Form Elements */
         .input-group-row { display: flex; gap: 10px; margin-bottom: 15px; }
         .form-control { margin-bottom: 15px; }
         .form-control label { display: block; margin-bottom: 5px; font-size: 12px; color: #666; font-weight: 600; }
         input, select { border: 1px solid #ddd; border-radius: 8px; padding: 12px; width: 100%; font-family: inherit; font-size: 14px; }
         .row-inputs { display: flex; gap: 10px; }
         .half { flex: 1; }
+        
+        /* Buttons */
         .btn-icon { background: var(--purple); color: #fff; border: none; width: 50px; border-radius: 8px; cursor: pointer; font-size: 18px; }
         .btn-save { width: 100%; background: var(--purple); color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: 600; margin-top: 10px; }
         .btn-save:hover { background: #5a52d5; }
         .btn-delete { color: #aaa; background: none; border: none; cursor: pointer; font-size: 14px; padding: 5px;}
         .btn-delete:hover { color: var(--red); }
-        /* Tags agora são Bancos */
+        
+        /* Tags (Bancos) */
         .tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
         .tag { background: #e3f2fd; color: #1565c0; padding: 5px 12px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 5px; border: 1px solid #bbdefb; }
         .tag-delete { cursor: pointer; color: var(--red); font-weight: bold; margin-left: 5px; }
+        
+        /* Radio Group */
         .radio-group { display: flex; gap: 10px; }
         .radio-group input { display: none; }
         .radio-label { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; text-align: center; cursor: pointer; font-size: 13px; color: #777; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         input:checked + .radio-label { background-color: #f3e5f5; border-color: var(--purple); color: var(--purple); font-weight: 600; }
+        
+        /* Listas */
         ul { list-style: none; }
         .list li { background: #f9f9f9; padding: 12px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid #ccc; }
         .list li.income { border-left-color: var(--green); }
         .list li.expense-debit { border-left-color: #555; }
         .list li.expense-credit { border-left-color: var(--orange); }
+        
         .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 5px; color: white;}
         .bg-credit { background-color: var(--orange); }
         .bg-debit { background-color: #777; }
-        .list-users li { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        
+        /* ESTILO DA CONSOLIDAÇÃO POR BANCO */
+        .bank-summary-item { flex-direction: column; align-items: flex-start; padding: 12px; border-bottom: 1px solid #eee; margin-bottom: 12px; background: #fff; border-left: 5px solid var(--purple); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
+        .bank-header { display: flex; justify-content: space-between; width: 100%; font-size: 15px; font-weight: bold; color: #333; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid #f0f0f0; }
+        .bank-people-list { width: 100%; font-size: 13px; color: #555; }
+        .bank-person-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #eee; }
+        .bank-person-row:last-child { border-bottom: none; }
+        .person-name { color: #666; }
+        .person-val { font-weight: 600; color: #333; }
+        .person-me { color: var(--purple); font-weight: bold; } /* Destaque para o Henrique */
+
     </style>
 </head>
 <body>
@@ -77,7 +104,7 @@
                 <div class="box-clean">
                     <h3><i class="fas fa-users"></i> Pessoas no Cartão</h3>
                     <div class="input-group-row">
-                        <input type="text" id="new-user-name" placeholder="Nome (Ex: Mãe, Irmã)">
+                        <input type="text" id="new-user-name" placeholder="Nome (Ex: Mãe)">
                         <button onclick="addUser()" class="btn-icon"><i class="fas fa-plus"></i></button>
                     </div>
                     <small style="color: #888;">Adicione quem vai usar seu cartão.</small>
@@ -87,7 +114,7 @@
                     <h3><i class="fas fa-university"></i> Bancos / Cartões</h3>
                     <div class="tags-container" id="banks-list"></div>
                     <div class="input-group-row">
-                        <input type="text" id="new-bank-name" placeholder="Novo Banco (Ex: Nubank)">
+                        <input type="text" id="new-bank-name" placeholder="Novo Banco">
                         <button onclick="addBank()" class="btn-icon"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
@@ -139,11 +166,9 @@
 
             <div class="column">
                 <div class="box-clean">
-                    <h3><i class="fas fa-chart-pie"></i> Rateio da Fatura</h3>
-                    <ul id="invoice-split-list" class="list-users"></ul>
-                    <div style="text-align: right; margin-top:15px; border-top: 1px solid #eee; padding-top: 10px;">
-                        Parte do Henrique: <strong id="my-invoice-part" style="color:#6c63ff">R$ 0.00</strong>
-                    </div>
+                    <h3><i class="fas fa-file-invoice-dollar"></i> Consolidação por Banco</h3>
+                    <ul id="invoice-split-list" class="list-users">
+                        </ul>
                 </div>
 
                 <div class="box-clean">
@@ -152,38 +177,42 @@
                 </div>
                 
                 <button onclick="clearAll()" style="width:100%; padding:15px; background:#e0e0e0; color:#555; border:none; border-radius:8px; cursor:pointer; margin-top:20px;">
-                    <i class="fas fa-trash-alt"></i> RESETAR SISTEMA
+                    <i class="fas fa-trash-alt"></i> RESETAR SISTEMA (Recarregar Bancos)
                 </button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 1. CONFIGURAÇÃO INICIAL ---
-        // Agora usamos 'fin_banks' ao invés de categories
+        // --- 1. CONFIGURAÇÃO E DADOS ---
+        const defaultBanks = ['Bradesco', 'Itaú Uniclass', 'Mercado Pago', 'Nubank', 'Azul Platinum', 'Azul Gold', 'Pão de Açúcar'];
+
         let users = JSON.parse(localStorage.getItem('fin_users')) || [];
         let transactions = JSON.parse(localStorage.getItem('fin_transactions')) || [];
-        let banks = JSON.parse(localStorage.getItem('fin_banks')) || ['Nubank', 'Inter', 'Itaú', 'Caixa'];
+        let banks = JSON.parse(localStorage.getItem('fin_banks'));
 
-        // CORREÇÃO MÁGICA DE NOME (Eu -> Henrique)
+        if (!banks || banks.length === 0) {
+            banks = defaultBanks;
+            localStorage.setItem('fin_banks', JSON.stringify(banks));
+        }
+
         if (users.includes('Eu')) {
             const index = users.indexOf('Eu');
             users[index] = 'Henrique';
             localStorage.setItem('fin_users', JSON.stringify(users));
         }
-        let fixedTrans = false;
-        transactions.forEach(t => { if (t.user === 'Eu') { t.user = 'Henrique'; fixedTrans = true; } });
-        if (fixedTrans) localStorage.setItem('fin_transactions', JSON.stringify(transactions));
-
         if (!users.includes('Henrique')) {
             users.unshift('Henrique');
             localStorage.setItem('fin_users', JSON.stringify(users));
         }
+        
+        let fixedTrans = false;
+        transactions.forEach(t => { if (t.user === 'Eu') { t.user = 'Henrique'; fixedTrans = true; } });
+        if (fixedTrans) localStorage.setItem('fin_transactions', JSON.stringify(transactions));
 
-        // ELEMENTOS
+        // --- 2. ELEMENTOS DA TELA ---
         const elWallet = document.getElementById('wallet-balance');
         const elInvoice = document.getElementById('invoice-total');
-        const elMyPart = document.getElementById('my-invoice-part');
         const elList = document.getElementById('transactions-list');
         const elSplit = document.getElementById('invoice-split-list');
         const elUserSelect = document.getElementById('user-select');
@@ -195,6 +224,7 @@
             updateScreen();
         }
 
+        // --- 3. ADICIONAR TRANSAÇÃO ---
         document.getElementById('transaction-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const desc = document.getElementById('desc').value;
@@ -217,13 +247,18 @@
             document.getElementById('amount').value = '';
         });
 
+        // --- 4. ATUALIZAR TELA (CONSOLIDAÇÃO POR BANCO) ---
         function updateScreen() {
-            elList.innerHTML = ''; elSplit.innerHTML = '';
-            let wallet = 0, invoice = 0, myInvoice = 0;
-            let othersInvoice = {};
-            users.forEach(u => othersInvoice[u] = 0);
+            elList.innerHTML = ''; 
+            elSplit.innerHTML = '';
+            
+            let wallet = 0, invoice = 0;
+            
+            // Objeto de Consolidação: { 'Nubank': { total: 500, users: {'Henrique': 200, 'Mãe': 300} } }
+            let bankConsolidation = {};
 
             transactions.forEach(t => {
+                // Render Lista Histórico
                 const li = document.createElement('li');
                 if(t.type === 'income') li.className = 'income';
                 else if(t.method === 'credit') li.className = 'expense-credit';
@@ -231,40 +266,70 @@
                 
                 const label = t.method === 'credit' ? '<span class="badge bg-credit">Crédito</span>' : (t.type === 'income' ? '' : '<span class="badge bg-debit">Débito</span>');
                 const sign = t.type === 'expense' ? '-' : '+';
-                
-                // Mostra o BANCO no lugar da categoria
-                // Se for transação antiga sem banco, mostra traço
-                const displayBank = t.bank ? t.bank : (t.category ? t.category : '-');
+                const displayBank = t.bank ? t.bank : '-';
 
                 li.innerHTML = `<div><strong>${t.desc} ${label}</strong><small style="color:#777">${t.user} | ${displayBank}</small></div>
                                 <div style="display:flex;align-items:center;gap:10px;"><span style="font-weight:bold">${sign} R$ ${t.amount.toFixed(2)}</span>
                                 <button class="btn-delete" onclick="removeTrans(${t.id})"><i class="fas fa-trash"></i></button></div>`;
                 elList.prepend(li);
 
+                // Cálculos
                 if (t.type === 'income') { wallet += t.amount; }
                 else {
                     if (t.method === 'debit') wallet -= t.amount;
                     else {
+                        // CRÉDITO
                         invoice += t.amount;
-                        if(t.user === 'Henrique') myInvoice += t.amount;
-                        else if (othersInvoice[t.user] !== undefined) othersInvoice[t.user] += t.amount;
+                        
+                        // Consolidação por Banco
+                        const bName = t.bank || 'Outros';
+                        if (!bankConsolidation[bName]) {
+                            bankConsolidation[bName] = { total: 0, users: {} };
+                        }
+                        
+                        bankConsolidation[bName].total += t.amount;
+                        
+                        if (!bankConsolidation[bName].users[t.user]) {
+                            bankConsolidation[bName].users[t.user] = 0;
+                        }
+                        bankConsolidation[bName].users[t.user] += t.amount;
                     }
                 }
             });
 
             elWallet.innerText = `R$ ${wallet.toFixed(2)}`;
             elInvoice.innerText = `R$ ${invoice.toFixed(2)}`;
-            elMyPart.innerText = `R$ ${myInvoice.toFixed(2)}`;
 
-            for (const [name, val] of Object.entries(othersInvoice)) {
-                if (val > 0 && name !== 'Henrique') {
+            // --- RENDERIZAR CONSOLIDAÇÃO (BANCO -> PESSOAS) ---
+            for (const [bankName, data] of Object.entries(bankConsolidation)) {
+                if (data.total > 0) {
                     const li = document.createElement('li');
-                    li.innerHTML = `<span>${name}</span> <strong>R$ ${val.toFixed(2)}</strong>`;
+                    li.className = 'bank-summary-item';
+                    
+                    // Cabeçalho: Nome do Banco e Total Geral da Fatura daquele banco
+                    let html = `<div class="bank-header">
+                                    <span>${bankName}</span>
+                                    <span>R$ ${data.total.toFixed(2)}</span>
+                                </div>`;
+                    
+                    // Lista de pessoas dentro desse banco
+                    html += `<div class="bank-people-list">`;
+                    for (const [person, val] of Object.entries(data.users)) {
+                        const isMe = person === 'Henrique' ? 'person-me' : 'person-name';
+                        html += `<div class="bank-person-row">
+                                    <span class="${isMe}">${person}</span>
+                                    <span class="person-val">R$ ${val.toFixed(2)}</span>
+                                 </div>`;
+                    }
+                    html += `</div>`;
+
+                    li.innerHTML = html;
                     elSplit.appendChild(li);
                 }
             }
         }
 
+        // --- FUNÇÕES AUXILIARES ---
         function checkUserMethod() {
             if(elUserSelect.value !== 'Henrique') document.getElementById('method-credit').checked = true;
         }
@@ -274,13 +339,11 @@
             if(name && !users.includes(name)) { users.push(name); saveData(); updateDropdowns(); document.getElementById('new-user-name').value = ''; }
         }
 
-        // Funções para Bancos
         function addBank() {
             const name = document.getElementById('new-bank-name').value.trim();
             if(name && !banks.includes(name)) { banks.push(name); saveData(); updateDropdowns(); document.getElementById('new-bank-name').value = ''; }
         }
         function removeBank(name) { if(confirm('Excluir Banco ' + name + '?')) { banks = banks.filter(b => b !== name); saveData(); updateDropdowns(); } }
-        
         function removeTrans(id) { if(confirm('Apagar?')) { transactions = transactions.filter(t => t.id !== id); saveData(); updateScreen(); } }
 
         function updateDropdowns() {
