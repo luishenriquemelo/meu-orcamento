@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Orçamento Pessoal</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+<body>
+
+    <div class="app-container">
+        <nav class="sidebar">
+            <h2>💰 Orçamento</h2>
+            <ul>
+                <li class="active" onclick="showSection('dashboard')">
+                    <span class="material-icons-round">dashboard</span> Dashboard
+                </li>
+                <li onclick="showSection('transactions')">
+                    <span class="material-icons-round">receipt_long</span> Transações
+                </li>
+                <li onclick="showSection('categories')">
+                    <span class="material-icons-round">category</span> Categorias
+                </li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            
+            <section id="dashboard" class="section active">
+                <header>
+                    <h1>Visão Geral</h1>
+                    <button class="btn-primary" onclick="openModal()">+ Nova Transação</button>
+                </header>
+
+                <div class="cards-container">
+                    <div class="card income">
+                        <h3>Receitas</h3>
+                        <p id="total-income">R$ 0,00</p>
+                    </div>
+                    <div class="card expense">
+                        <h3>Despesas</h3>
+                        <p id="total-expense">R$ 0,00</p>
+                    </div>
+                    <div class="card balance">
+                        <h3>Saldo Atual</h3>
+                        <p id="total-balance">R$ 0,00</p>
+                    </div>
+                </div>
+
+                <div class="charts-area">
+                    <div class="chart-card">
+                        <h3>Distribuição de Despesas</h3>
+                        <div class="canvas-container">
+                            <canvas id="expenseChart"></canvas>
+                        </div>
+                        <div id="chart-legend" class="chart-legend"></div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Alertas de Orçamento</h3>
+                        <ul id="budget-alerts" class="budget-list">
+                            </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="transactions" class="section">
+                <header>
+                    <h1>Histórico de Transações</h1>
+                    <div class="filters">
+                        <select id="filter-month" onchange="renderTransactions()">
+                            </select>
+                        <select id="filter-year" onchange="renderTransactions()">
+                            </select>
+                    </div>
+                </header>
+                
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Valor</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transaction-list">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="categories" class="section">
+                <header>
+                    <h1>Gerenciar Categorias</h1>
+                </header>
+                
+                <div class="category-manager">
+                    <form id="category-form" onsubmit="addCategory(event)">
+                        <div class="form-group">
+                            <label>Nome da Categoria</label>
+                            <input type="text" id="cat-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <select id="cat-type">
+                                <option value="expense">Despesa</option>
+                                <option value="income">Receita</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Orçamento Mensal (Meta)</label>
+                            <input type="number" id="cat-limit" step="0.01" value="0">
+                        </div>
+                        <button type="submit" class="btn-secondary">Adicionar Categoria</button>
+                    </form>
+
+                    <div class="category-list-container">
+                        <h3>Categorias Existentes</h3>
+                        <ul id="category-list">
+                            </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modal-title">Nova Transação</h2>
+            <form id="transaction-form" onsubmit="saveTransaction(event)">
+                <input type="hidden" id="trans-id">
+                
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="type" value="income" onchange="updateCategorySelect()" required> Receita</label>
+                        <label><input type="radio" name="type" value="expense" onchange="updateCategorySelect()" checked> Despesa</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <input type="text" id="desc" required placeholder="Ex: Supermercado">
+                </div>
+
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" id="amount" step="0.01" required placeholder="0,00">
+                </div>
+
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="category" required>
+                        </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Data</label>
+                    <input type="date" id="date" required>
+                </div>
+
+                <button type="submit" class="btn-primary w-100">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
