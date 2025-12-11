@@ -178,7 +178,7 @@
                 </div>
                 
                 <button onclick="clearAll()" style="width:100%; padding:15px; background:#e0e0e0; color:#555; border:none; border-radius:8px; cursor:pointer; margin-top:20px;">
-                    <i class="fas fa-trash-alt"></i> RESETAR SISTEMA (Recarregar Bancos)
+                    <i class="fas fa-trash-alt"></i> RESETAR SISTEMA (Carregar Novos Bancos)
                 </button>
             </div>
         </div>
@@ -186,12 +186,22 @@
 
     <script>
         // --- 1. CONFIGURAÇÃO E DADOS ---
-        const defaultBanks = ['Bradesco', 'Itaú Uniclass', 'Mercado Pago', 'Nubank', 'Azul Platinum', 'Azul Gold', 'Pão de Açúcar'];
+        // LISTA DE BANCOS ATUALIZADA
+        const defaultBanks = [
+            'Bradesco', 
+            'Itaú Uniclass', 
+            'Mercado Pago', 
+            'Nubank', 
+            'Azul Platinum', 
+            'Azul Gold', 
+            'Pão de Açúcar'
+        ];
 
         let users = JSON.parse(localStorage.getItem('fin_users')) || [];
         let transactions = JSON.parse(localStorage.getItem('fin_transactions')) || [];
         let banks = JSON.parse(localStorage.getItem('fin_banks'));
 
+        // Se não tiver bancos salvos (ou se resetar), usa os novos padrões
         if (!banks || banks.length === 0) {
             banks = defaultBanks;
             localStorage.setItem('fin_banks', JSON.stringify(banks));
@@ -255,7 +265,7 @@
             
             let wallet = 0, invoice = 0;
             
-            // Objeto de Consolidação: { 'Nubank': { total: 500, users: {'Henrique': 200, 'Mãe': 300} } }
+            // Objeto de Consolidação
             let bankConsolidation = {};
 
             transactions.forEach(t => {
@@ -307,13 +317,11 @@
                     const li = document.createElement('li');
                     li.className = 'bank-summary-item';
                     
-                    // Cabeçalho: Nome do Banco e Total Geral da Fatura daquele banco
                     let html = `<div class="bank-header">
                                     <span>${bankName}</span>
                                     <span>R$ ${data.total.toFixed(2)}</span>
                                 </div>`;
                     
-                    // Lista de pessoas dentro desse banco
                     html += `<div class="bank-people-list">`;
                     for (const [person, val] of Object.entries(data.users)) {
                         const isMe = person === 'Henrique' ? 'person-me' : 'person-name';
@@ -378,7 +386,11 @@
         }
 
         function clearAll() {
-            if(confirm('Apagar TUDO?')) { localStorage.clear(); location.reload(); }
+            // Agora o reset limpa a lista e força o reload dos padrões
+            if(confirm('Apagar TUDO e carregar novos Bancos?')) { 
+                localStorage.clear(); 
+                location.reload(); 
+            }
         }
 
         init();
