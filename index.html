@@ -3,55 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Financeiro</title>
+    <title>Controle Financeiro Pro</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <h1>Controle Financeiro</h1>
+        <header>
+            <h1>Controle Financeiro</h1>
+        </header>
 
-        <div class="card-usuario">
-            <h3>Cadastrar Novo Usuário</h3>
-            <div class="input-group">
-                <input type="text" id="novo-usuario-nome" placeholder="Ex: Alicia">
-                <button id="btn-add-usuario" title="Adicionar">+</button>
+        <div class="dashboard">
+            <div class="card income">
+                <h3>Entradas</h3>
+                <p id="money-plus" class="money plus">+ R$ 0.00</p>
             </div>
-            <p class="hint">Adicione quem vai usar seu cartão.</p>
+            <div class="card expense">
+                <h3>Saídas (Cartão)</h3>
+                <p id="money-minus" class="money minus">- R$ 0.00</p>
+            </div>
+            <div class="card balance">
+                <h3>Saldo Atual</h3>
+                <p id="balance" class="money">R$ 0.00</p>
+            </div>
         </div>
 
-        <hr>
-
-        <h3>Adicionar Transação</h3>
-        <form id="financial-form">
-            <div class="form-row">
-                <input type="text" id="description" placeholder="Descrição (Ex: Uber, Mercado)" required>
-                <input type="number" id="amount" placeholder="Valor (R$)" step="0.01" required>
-            </div>
+        <div class="main-content">
             
-            <div class="form-row">
-                <select id="type">
-                    <option value="expense">Saída (Gasto)</option>
-                    <option value="income">Entrada (Salário)</option>
-                </select>
+            <div class="column form-column">
                 
-                <select id="user-select" required>
-                    <option value="" disabled selected>Quem gastou?</option>
-                    <option value="Eu">Eu (Pessoal)</option>
-                </select>
+                <div class="box-clean">
+                    <h3><i class="fas fa-user-plus"></i> Novo Usuário</h3>
+                    <div class="input-group-user">
+                        <input type="text" id="novo-usuario-nome" placeholder="Nome (Ex: Márcio)">
+                        <button id="btn-add-usuario" class="btn-purple"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+
+                <div class="box-clean">
+                    <h3>Nova Transação</h3>
+                    <form id="form">
+                        <div class="form-control">
+                            <label>Descrição</label>
+                            <input type="text" id="text" placeholder="Ex: Salário, Uber, Mercado..." required>
+                        </div>
+                        <div class="form-control">
+                            <label>Valor (R$)</label>
+                            <input type="number" id="amount" placeholder="0.00" step="0.01" required>
+                        </div>
+                        
+                        <div class="row-inputs">
+                            <div class="form-control half">
+                                <label>Tipo</label>
+                                <select id="trans-type">
+                                    <option value="expense">Saída (-)</option>
+                                    <option value="income">Entrada (+)</option>
+                                </select>
+                            </div>
+                            <div class="form-control half">
+                                <label>Quem?</label>
+                                <select id="user-select" required>
+                                    <option value="" disabled selected>Selecione...</option>
+                                    <option value="Eu">Eu (Pessoal)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="btn-save">Adicionar Transação</button>
+                    </form>
+                </div>
             </div>
 
-            <button type="submit" class="btn-salvar">Salvar Transação</button>
-        </form>
+            <div class="column list-column">
+                
+                <div class="box-clean">
+                    <h3><i class="fas fa-chart-pie"></i> Gastos por Pessoa (Cartão)</h3>
+                    <ul id="users-list" class="list-users">
+                        </ul>
+                </div>
 
-        <div class="summary">
-            <h2>Resumo por Pessoa</h2>
-            <ul id="user-totals"></ul>
-            <p><strong>Total Geral Gasto:</strong> R$ <span id="total-expenses">0.00</span></p>
-        </div>
-
-        <div class="transactions">
-            <h2>Histórico</h2>
-            <ul id="transaction-list"></ul>
+                <div class="box-clean">
+                    <h3>Histórico Recente</h3>
+                    <ul id="list" class="list">
+                        </ul>
+                </div>
+            </div>
         </div>
     </div>
 
