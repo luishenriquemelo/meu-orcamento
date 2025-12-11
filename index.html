@@ -15,7 +15,7 @@
         
         .container { width: 100%; max-width: 1000px; margin: 0 auto; }
         
-        /* Cabeçalho com Filtro de Data */
+        /* Cabeçalho */
         header { 
             display: flex; flex-direction: column; align-items: center; margin-bottom: 25px; gap: 10px;
         }
@@ -57,10 +57,14 @@
         .btn-delete { color: #aaa; background: none; border: none; cursor: pointer; font-size: 14px; padding: 5px;}
         .btn-delete:hover { color: var(--red); }
         
-        /* Tags (Bancos) */
+        /* Tags (Bancos e Pessoas) */
         .tags-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-        .tag { background: #e3f2fd; color: #1565c0; padding: 5px 12px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 5px; border: 1px solid #bbdefb; }
-        .tag-delete { cursor: pointer; color: var(--red); font-weight: bold; margin-left: 5px; }
+        .tag { 
+            background: #e3f2fd; color: #1565c0; padding: 5px 12px; border-radius: 20px; font-size: 12px; 
+            display: flex; align-items: center; gap: 5px; border: 1px solid #bbdefb; cursor: pointer; transition: 0.2s;
+        }
+        .tag:hover { background: #bbdefb; }
+        .tag-delete { cursor: pointer; color: var(--red); font-weight: bold; margin-left: 5px; padding-left: 5px; border-left: 1px solid rgba(0,0,0,0.1); }
         
         /* Radio Group */
         .radio-group { display: flex; gap: 10px; }
@@ -79,7 +83,7 @@
         .bg-credit { background-color: var(--orange); }
         .bg-debit { background-color: #777; }
         
-        /* ESTILO DA CONSOLIDAÇÃO POR BANCO COM CORES */
+        /* ESTILO DA CONSOLIDAÇÃO */
         .bank-summary-item { 
             flex-direction: column; align-items: flex-start; padding: 0; border-bottom: 1px solid #eee; margin-bottom: 15px; 
             background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: none; overflow: hidden;
@@ -125,8 +129,9 @@
             <div class="column">
                 <div class="box-clean">
                     <h3><i class="fas fa-users"></i> Pessoas no Cartão</h3>
+                    <div class="tags-container" id="users-list-tags"></div>
                     <div class="input-group-row">
-                        <input type="text" id="new-user-name" placeholder="Nome (Ex: Mãe)">
+                        <input type="text" id="new-user-name" placeholder="Adicionar Nome (Ex: Mãe)">
                         <button onclick="addUser()" class="btn-icon"><i class="fas fa-plus"></i></button>
                     </div>
                 </div>
@@ -147,21 +152,22 @@
                             <label>Descrição</label>
                             <input type="text" id="desc" placeholder="Ex: TV Nova, Mercado..." required>
                         </div>
+                        
                         <div class="row-inputs">
                             <div class="form-control half">
                                 <label>Valor TOTAL (R$)</label>
                                 <input type="text" id="amount" placeholder="0,00" required> 
                             </div>
                             <div class="form-control half">
-                                <label>Banco / Origem</label>
-                                <select id="bank-select"></select>
+                                <label>Data da Compra</label>
+                                <input type="date" id="trans-date" required>
                             </div>
                         </div>
 
                         <div class="row-inputs">
                             <div class="form-control half">
-                                <label>Parcelas</label>
-                                <input type="number" id="installments" value="1" min="1" max="48" title="Em quantas vezes?">
+                                <label>Banco / Origem</label>
+                                <select id="bank-select"></select>
                             </div>
                             <div class="form-control half">
                                 <label>Tipo</label>
@@ -173,6 +179,10 @@
                         </div>
 
                         <div class="row-inputs">
+                            <div class="form-control half">
+                                <label>Parcelas</label>
+                                <input type="number" id="installments" value="1" min="1" max="60" title="Em quantas vezes?">
+                            </div>
                             <div class="form-control half">
                                 <label>Quem foi?</label>
                                 <select id="user-select" onchange="checkUserMethod()">
@@ -198,8 +208,7 @@
                 
                 <div class="box-clean">
                     <h3><i class="fas fa-file-invoice-dollar"></i> Fatura do Mês (Por Banco)</h3>
-                    <ul id="invoice-split-list" class="list-users">
-                        </ul>
+                    <ul id="invoice-split-list" class="list-users"></ul>
                 </div>
 
                 <div class="box-clean">
@@ -217,37 +226,23 @@
     <script>
         // --- 1. CONFIGURAÇÕES E DADOS ---
         
-        // Cores dos Bancos
         const bankColors = {
-            'Nubank': '#820ad1',          // Roxo
-            'Bradesco': '#cc092f',        // Vermelho
-            'Itaú Uniclass': '#ec7000',   // Laranja
-            'Mercado Pago': '#009ee3',    // Azul Claro
-            'Pão de Açúcar': '#005835',   // Verde Escuro
-            'Azul Platinum': '#0f2660',   // Azul Marinho
-            'Azul Gold': '#1e40af',       // Azul Médio
-            'default': '#555555'          // Cinza padrão
+            'Nubank': '#820ad1', 'Bradesco': '#cc092f', 'Itaú Uniclass': '#ec7000',
+            'Mercado Pago': '#009ee3', 'Pão de Açúcar': '#005835', 'Azul Platinum': '#0f2660',
+            'Azul Gold': '#1e40af', 'default': '#555555'
         };
 
-        // Datas de Vencimento
         const bankDueDates = {
-            'Bradesco': '08',
-            'Mercado Pago': '08',
-            'Itaú Uniclass': '10',
-            'Nubank': '09',
-            'Azul Platinum': '15',
-            'Azul Gold': '17',
-            'Pão de Açúcar': '18'
+            'Bradesco': '08', 'Mercado Pago': '08', 'Itaú Uniclass': '10',
+            'Nubank': '09', 'Azul Platinum': '15', 'Azul Gold': '17', 'Pão de Açúcar': '18'
         };
 
         const defaultBanks = Object.keys(bankColors).filter(b => b !== 'default');
 
-        // Dados do LocalStorage
         let users = JSON.parse(localStorage.getItem('fin_users')) || [];
         let transactions = JSON.parse(localStorage.getItem('fin_transactions')) || [];
         let banks = JSON.parse(localStorage.getItem('fin_banks'));
 
-        // Configuração Inicial de Bancos
         if (!banks || banks.length === 0) {
             banks = defaultBanks;
             localStorage.setItem('fin_banks', JSON.stringify(banks));
@@ -255,8 +250,7 @@
 
         // Garante Henrique na lista
         if (users.includes('Eu')) {
-            const index = users.indexOf('Eu');
-            users[index] = 'Henrique';
+            users[users.indexOf('Eu')] = 'Henrique';
             localStorage.setItem('fin_users', JSON.stringify(users));
         }
         if (!users.includes('Henrique')) {
@@ -264,7 +258,7 @@
             localStorage.setItem('fin_users', JSON.stringify(users));
         }
 
-        // Elementos DOM
+        // Elementos
         const elWallet = document.getElementById('wallet-balance');
         const elInvoice = document.getElementById('invoice-total');
         const elList = document.getElementById('transactions-list');
@@ -272,50 +266,62 @@
         const elUserSelect = document.getElementById('user-select');
         const elBankSelect = document.getElementById('bank-select');
         const elBanksList = document.getElementById('banks-list');
+        const elUsersListTags = document.getElementById('users-list-tags'); // Novo
         const elMonthFilter = document.getElementById('month-filter');
+        const elTransDate = document.getElementById('trans-date'); // Novo
 
         function init() {
-            // Define mês atual no filtro
+            // Data de hoje padrão
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
-            elMonthFilter.value = `${year}-${month}`; // YYYY-MM
+            const day = String(now.getDate()).padStart(2, '0');
+            
+            elMonthFilter.value = `${year}-${month}`; // Filtro Mês
+            elTransDate.value = `${year}-${month}-${day}`; // Input Data
 
             updateDropdowns();
             updateScreen();
         }
 
-        // --- 2. ADICIONAR TRANSAÇÃO (COM PARCELAMENTO) ---
+        // --- 2. ADICIONAR TRANSAÇÃO ---
         document.getElementById('transaction-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const desc = document.getElementById('desc').value;
             let amountStr = document.getElementById('amount').value.replace(',', '.');
             const totalAmount = parseFloat(amountStr);
             const installments = parseInt(document.getElementById('installments').value) || 1;
+            const dateInput = elTransDate.value; // Data escolhida (2026-05-15)
 
             if (isNaN(totalAmount) || totalAmount <= 0) { alert("Valor inválido"); return; }
-            
+            if (!dateInput) { alert("Selecione uma data"); return; }
+
             const type = document.getElementById('trans-type').value;
             const user = document.getElementById('user-select').value;
             const bank = document.getElementById('bank-select').value;
             let method = document.getElementById('method-credit').checked ? 'credit' : 'debit';
 
             const installmentValue = totalAmount / installments;
-            const today = new Date();
+            
+            // Data baseada no input (permite ano futuro)
+            const baseDate = new Date(dateInput); 
+            // Corrige fuso horário para não pular dia
+            const startYear = baseDate.getFullYear();
+            const startMonth = baseDate.getMonth();
+            const startDay = baseDate.getDate() + 1; // Ajuste técnico de Date input
 
             for (let i = 0; i < installments; i++) {
-                const date = new Date(today.getFullYear(), today.getMonth() + i, today.getDate());
+                // Cria data somando meses
+                const date = new Date(startYear, startMonth + i, startDay);
+                
                 const isoDate = date.toISOString().split('T')[0];
                 const ptDate = date.toLocaleDateString('pt-BR');
                 const descText = installments > 1 ? `${desc} (${i+1}/${installments})` : desc;
 
                 transactions.push({
                     id: Date.now() + i, 
-                    desc: descText, 
-                    amount: installmentValue, 
-                    type, user, bank, method,
-                    date: isoDate,      
-                    displayDate: ptDate 
+                    desc: descText, amount: installmentValue, type, user, bank, method,
+                    date: isoDate, displayDate: ptDate 
                 });
             }
 
@@ -329,26 +335,24 @@
 
         // --- 3. ATUALIZAR TELA ---
         function updateScreen() {
-            elList.innerHTML = ''; 
-            elSplit.innerHTML = '';
+            elList.innerHTML = ''; elSplit.innerHTML = '';
             
             let wallet = 0; 
             let invoice = 0; 
             const selectedMonth = elMonthFilter.value; 
             let bankConsolidation = {};
 
-            // Saldo Total (Todas as datas)
+            // Saldo Total (Independente de data)
             transactions.forEach(t => {
                 if (t.type === 'income') wallet += t.amount;
                 if (t.type === 'expense' && t.method === 'debit') wallet -= t.amount;
             });
 
-            // Filtro do Mês
+            // Filtro Mês
             const filteredTransactions = transactions.filter(t => t.date.startsWith(selectedMonth));
             filteredTransactions.sort((a,b) => a.date.localeCompare(b.date));
 
             filteredTransactions.forEach(t => {
-                // Lista
                 const li = document.createElement('li');
                 if(t.type === 'income') li.className = 'income';
                 else if(t.method === 'credit') li.className = 'expense-credit';
@@ -363,17 +367,12 @@
                                 <button class="btn-delete" onclick="removeTrans(${t.id})"><i class="fas fa-trash"></i></button></div>`;
                 elList.prepend(li); 
 
-                // Consolidação de Fatura
                 if (t.type === 'expense' && t.method === 'credit') {
                     invoice += t.amount;
                     const bName = t.bank || 'Outros';
-                    if (!bankConsolidation[bName]) {
-                        bankConsolidation[bName] = { total: 0, users: {} };
-                    }
+                    if (!bankConsolidation[bName]) bankConsolidation[bName] = { total: 0, users: {} };
                     bankConsolidation[bName].total += t.amount;
-                    if (!bankConsolidation[bName].users[t.user]) {
-                        bankConsolidation[bName].users[t.user] = 0;
-                    }
+                    if (!bankConsolidation[bName].users[t.user]) bankConsolidation[bName].users[t.user] = 0;
                     bankConsolidation[bName].users[t.user] += t.amount;
                 }
             });
@@ -381,22 +380,18 @@
             elWallet.innerText = `R$ ${wallet.toFixed(2)}`;
             elInvoice.innerText = `R$ ${invoice.toFixed(2)}`;
 
-            // Renderizar Consolidação
             for (const [bankName, data] of Object.entries(bankConsolidation)) {
                 if (data.total > 0) {
                     const li = document.createElement('li');
                     li.className = 'bank-summary-item';
-                    
                     const bgColor = bankColors[bankName] || bankColors['default'];
-                    // Adiciona o dia de vencimento se existir
                     const dueDate = bankDueDates[bankName] ? ` - Dia ${bankDueDates[bankName]}` : '';
 
                     let html = `<div class="bank-header" style="background-color: ${bgColor}">
                                     <span>${bankName}${dueDate}</span>
                                     <span>R$ ${data.total.toFixed(2)}</span>
-                                </div>`;
-                    
-                    html += `<div class="bank-people-list">`;
+                                </div>
+                                <div class="bank-people-list">`;
                     for (const [person, val] of Object.entries(data.users)) {
                         const isMe = person === 'Henrique' ? 'person-me' : 'person-name';
                         html += `<div class="bank-person-row">
@@ -405,14 +400,14 @@
                                  </div>`;
                     }
                     html += `</div>`;
-
                     li.innerHTML = html;
                     elSplit.appendChild(li);
                 }
             }
         }
 
-        // --- FUNÇÕES AUXILIARES ---
+        // --- FUNÇÕES DE EDIÇÃO ---
+
         function checkUserMethod() {
             if(elUserSelect.value !== 'Henrique') document.getElementById('method-credit').checked = true;
         }
@@ -420,6 +415,33 @@
         function addUser() {
             const name = document.getElementById('new-user-name').value.trim();
             if(name && !users.includes(name)) { users.push(name); saveData(); updateDropdowns(); document.getElementById('new-user-name').value = ''; }
+        }
+
+        // Edição de Usuário
+        function editUser(oldName) {
+            const newName = prompt("Editar nome de " + oldName + " para:", oldName);
+            if (newName && newName.trim() !== "" && newName !== oldName) {
+                // Atualiza array de usuários
+                const index = users.indexOf(oldName);
+                if (index !== -1) {
+                    users[index] = newName.trim();
+                    // Atualiza TODAS transações antigas
+                    transactions.forEach(t => {
+                        if (t.user === oldName) t.user = newName.trim();
+                    });
+                    saveData();
+                    updateDropdowns();
+                    updateScreen();
+                }
+            }
+        }
+
+        function removeUser(name) {
+            if (name === 'Henrique') { alert("Não pode excluir o dono do cartão!"); return; }
+            if (confirm('Excluir ' + name + '?')) {
+                users = users.filter(u => u !== name);
+                saveData(); updateDropdowns();
+            }
         }
 
         function addBank() {
@@ -430,22 +452,31 @@
         function removeTrans(id) { if(confirm('Apagar?')) { transactions = transactions.filter(t => t.id !== id); saveData(); updateScreen(); } }
 
         function updateDropdowns() {
+            // Select Usuários
             elUserSelect.innerHTML = '';
+            elUsersListTags.innerHTML = ''; // Limpa tags
+
             users.forEach(u => {
                 const opt = document.createElement('option');
                 opt.value = u; opt.innerText = u;
                 elUserSelect.appendChild(opt);
+
+                // Cria Tag Visual para editar
+                const div = document.createElement('div');
+                div.className = 'tag';
+                div.innerHTML = `<span onclick="editUser('${u}')">${u} <i class="fas fa-pen" style="font-size:10px; margin-left:5px; opacity:0.5"></i></span> 
+                                 <span class="tag-delete" onclick="removeUser('${u}')">&times;</span>`;
+                elUsersListTags.appendChild(div);
             });
             
+            // Select Bancos
             elBankSelect.innerHTML = '';
+            elBanksList.innerHTML = '';
             banks.forEach(b => {
                 const opt = document.createElement('option');
                 opt.value = b; opt.innerText = b;
                 elBankSelect.appendChild(opt);
-            });
-            
-            elBanksList.innerHTML = '';
-            banks.forEach(b => {
+
                 const div = document.createElement('div');
                 div.className = 'tag';
                 const dotColor = bankColors[b] || '#ccc';
@@ -461,10 +492,7 @@
         }
 
         function clearAll() {
-            if(confirm('Apagar TUDO? Isso remove todas as transações.')) { 
-                localStorage.clear(); 
-                location.reload(); 
-            }
+            if(confirm('Apagar TUDO?')) { localStorage.clear(); location.reload(); }
         }
 
         init();
