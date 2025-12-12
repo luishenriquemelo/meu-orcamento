@@ -51,8 +51,15 @@
         .main-content { display: flex; flex-wrap: wrap; gap: 20px; }
         .column { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 20px; }
         .box-clean { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .box-clean h3 { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; color: #555; }
         
+        /* Título com Botão Toggle */
+        .title-header { 
+            border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; color: #555; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .title-header h3 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .btn-toggle-view { background: none; border: none; cursor: pointer; color: var(--purple); font-size: 16px; }
+
         .form-control { margin-bottom: 15px; }
         .form-control label { display: block; margin-bottom: 5px; font-size: 12px; font-weight: 600; color: #666; }
         input, select, textarea { border: 1px solid #ddd; border-radius: 8px; padding: 12px; width: 100%; font-family: inherit; }
@@ -72,10 +79,23 @@
         .tags-container { display: flex; flex-wrap: wrap; }
         .tag-delete { color: #e74c3c; margin-left: 5px; font-weight: bold; }
 
-        .bank-summary-item { flex-direction: column; align-items: flex-start; padding: 0; overflow: hidden; background: #fff; border-left: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 10px; }
+        /* Fatura por Banco Style */
+        .bank-summary-item { flex-direction: column; align-items: flex-start; padding: 0; overflow: hidden; background: #fff; border-left: none; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 10px; border-radius: 8px;}
         .bank-header { display: flex; justify-content: space-between; width: 100%; padding: 10px 15px; color: #fff; font-weight: bold; }
-        .bank-people-list { width: 100%; padding: 10px 15px; font-size: 13px; color: #555; }
-        .bank-person-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #eee; padding: 4px 0; }
+        .bank-people-list { width: 100%; padding: 0; font-size: 13px; color: #555; }
+        
+        /* Item Detalhado dentro do Banco */
+        .bank-item-detail { 
+            padding: 10px 15px; 
+            border-bottom: 1px solid #f0f0f0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+        .bank-item-detail:last-child { border-bottom: none; }
+        .bank-item-info strong { display: block; font-size: 13px; color: #333; }
+        .bank-item-info small { color: #888; font-size: 11px; display: block; margin-top: 2px;}
+        .bank-item-obs { color: #888; font-style: italic; font-size: 11px; display: block; margin-top: 2px;}
         
         .radio-group { display: flex; gap: 10px; }
         .radio-group input { display: none; }
@@ -161,7 +181,9 @@
         <div class="main-content">
             <div class="column">
                 <div class="box-clean">
-                    <h3>Pessoas</h3>
+                    <div class="title-header">
+                        <h3>Pessoas</h3>
+                    </div>
                     <div class="tags-container" id="users-list-tags"></div>
                     <div class="input-group-row">
                         <input type="text" id="new-user-name" placeholder="Adicionar Nome">
@@ -169,7 +191,9 @@
                     </div>
                 </div>
                 <div class="box-clean">
-                    <h3>Bancos</h3>
+                    <div class="title-header">
+                        <h3>Bancos</h3>
+                    </div>
                     <div class="tags-container" id="banks-list"></div>
                     <div class="input-group-row">
                         <input type="text" id="new-bank-name" placeholder="Novo Banco">
@@ -177,7 +201,9 @@
                     </div>
                 </div>
                 <div class="box-clean">
-                    <h3 id="form-title">Movimentação</h3>
+                    <div class="title-header">
+                        <h3 id="form-title">Movimentação</h3>
+                    </div>
                     <form id="transaction-form">
                         <input type="hidden" id="edit-transaction-id">
                         <div class="form-control"><label>Descrição</label><input type="text" id="desc" placeholder="Ex: Mercado" required></div>
@@ -222,8 +248,21 @@
                 </div>
             </div>
             <div class="column">
-                <div class="box-clean"><h3>Fatura (Por Banco)</h3><ul id="invoice-split-list" class="list"></ul></div>
-                <div class="box-clean"><h3>Extrato Mês</h3><ul id="transactions-list" class="list"></ul></div>
+                <div class="box-clean">
+                    <div class="title-header">
+                        <h3>Fatura (Por Banco)</h3>
+                    </div>
+                    <ul id="invoice-split-list" class="list" style="padding:0; list-style:none;"></ul>
+                </div>
+                <div class="box-clean">
+                    <div class="title-header">
+                        <h3>Extrato Mês</h3>
+                        <button class="btn-toggle-view" onclick="toggleExtratoList()" title="Mostrar/Ocultar">
+                            <i id="icon-toggle-extrato" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <ul id="transactions-list" class="list"></ul>
+                </div>
             </div>
         </div>
     </div>
@@ -363,6 +402,22 @@
             elUserSelect.value = source.value;
             checkUserMethod();
         }
+        
+        // --- FUNÇÃO DE TOGGLE DO EXTRATO ---
+        window.toggleExtratoList = function() {
+            const list = document.getElementById('transactions-list');
+            const icon = document.getElementById('icon-toggle-extrato');
+            
+            if (list.style.display === 'none') {
+                list.style.display = 'block';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                list.style.display = 'none';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        };
 
         // --- SALVAR / EDITAR ---
         document.getElementById('transaction-form').addEventListener('submit', function(e) {
@@ -462,16 +517,14 @@
             const selMonth = elMonthFilter.value;
             const selUser = elFilterUser.value;
             const selBank = elFilterBank.value;
-            const selType = elFilterType.value; // Novo Filtro
+            const selType = elFilterType.value;
 
             const filtered = transactions
                 .filter(t => {
                     const matchMonth = t.date.startsWith(selMonth);
                     const matchUser = selUser === "" || t.user === selUser;
                     const matchBank = selBank === "" || t.bank === selBank;
-                    // Lógica Filtro Tipo
                     const matchType = selType === 'all' || (selType === 'recurring' && t.isRecurring);
-                    
                     return matchMonth && matchUser && matchBank && matchType;
                 })
                 .sort((a,b) => a.date.localeCompare(b.date));
@@ -480,6 +533,7 @@
                 if (t.type === 'income') wallet += t.amount;
                 if (t.type === 'expense' && t.method === 'debit') wallet -= t.amount;
 
+                // Renderiza Lista Extrato
                 const li = document.createElement('li');
                 li.className = t.type === 'income' ? 'income' : (t.method === 'credit' ? 'expense-credit' : 'expense-debit');
                 const sign = t.type === 'expense' ? '-' : '+';
@@ -503,25 +557,57 @@
                     </div>`;
                 list.prepend(li);
 
+                // Consolidação da Fatura (Agora armazenando itens individuais)
                 if (t.type === 'expense' && t.method === 'credit') {
                     invoice += t.amount;
                     const b = t.bank || 'Outros';
-                    if (!bankConsolidation[b]) bankConsolidation[b] = { total: 0, users: {} };
+                    if (!bankConsolidation[b]) bankConsolidation[b] = { total: 0, items: [] };
+                    
                     bankConsolidation[b].total += t.amount;
-                    bankConsolidation[b].users[t.user] = (bankConsolidation[b].users[t.user] || 0) + t.amount;
+                    // Guarda o item inteiro para mostrar detalhado depois
+                    bankConsolidation[b].items.push(t);
                 }
             });
 
             document.getElementById('wallet-balance').innerText = `R$ ${wallet.toFixed(2)}`;
             document.getElementById('invoice-total').innerText = `R$ ${invoice.toFixed(2)}`;
 
+            // Renderiza Fatura Detalhada por Banco
             for (const [bName, data] of Object.entries(bankConsolidation)) {
                 if (data.total > 0) {
                     const li = document.createElement('li'); li.className = 'bank-summary-item';
                     const dueDate = bankDueDates[bName] ? ` - Dia ${bankDueDates[bName]}` : '';
-                    let html = `<div class="bank-header" style="background:${bankColors[bName]||'#555'}"><span>${bName}${dueDate}</span><span>R$ ${data.total.toFixed(2)}</span></div><div class="bank-people-list">`;
-                    for (const [p, v] of Object.entries(data.users)) html += `<div class="bank-person-row"><span>${p}</span><strong>R$ ${v.toFixed(2)}</strong></div>`;
-                    li.innerHTML = html + '</div>';
+                    
+                    // Cabeçalho do Banco
+                    let html = `<div class="bank-header" style="background:${bankColors[bName]||'#555'}"><span>${bName}${dueDate}</span><span>R$ ${data.total.toFixed(2)}</span></div>
+                                <div class="bank-people-list">`;
+                    
+                    // Itens Detalhados dentro do Banco
+                    // Ordena por data (opcional)
+                    data.items.sort((a,b) => a.date.localeCompare(b.date));
+                    
+                    data.items.forEach(item => {
+                        const dateShow = item.displayDate || item.date.split('-').reverse().join('/');
+                        const descShow = item.desc;
+                        const iconRec = item.isRecurring ? '<i class="fas fa-sync-alt" style="font-size:10px; color:#888;"></i>' : '';
+                        const obsShow = item.obs ? `<span class="bank-item-obs">${item.obs}</span>` : '';
+
+                        html += `
+                            <div class="bank-item-detail">
+                                <div class="bank-item-info">
+                                    <strong>${descShow} ${iconRec}</strong>
+                                    <small>${item.user} | ${dateShow}</small>
+                                    ${obsShow}
+                                </div>
+                                <div style="font-weight:600; font-size:13px; color:#555;">
+                                    - R$ ${item.amount.toFixed(2)}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div>`; // fecha bank-people-list
+                    li.innerHTML = html;
                     splitList.appendChild(li);
                 }
             }
