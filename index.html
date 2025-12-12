@@ -82,6 +82,16 @@
         .radio-label { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; text-align: center; cursor: pointer; }
         input:checked + .radio-label { background-color: #f3e5f5; border-color: var(--purple); color: var(--purple); font-weight: 600; }
         
+        /* Toggle Recorrente */
+        .toggle-container { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
+        .toggle-label { font-size: 13px; font-weight: 600; color: #555; flex: 1; }
+        .toggle-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--purple); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; z-index: 9999; }
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--purple); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -116,22 +126,15 @@
                     <i class="fas fa-calendar-alt" style="color:var(--purple)"></i>
                     <input type="month" id="month-filter" onchange="updateScreen()">
                 </div>
-                
                 <div class="filter-group">
                     <label>Pessoa:</label>
-                    <select id="filter-user" onchange="updateScreen()">
-                        <option value="">Todas</option>
-                    </select>
+                    <select id="filter-user" onchange="updateScreen()"><option value="">Todas</option></select>
                 </div>
-
                 <div class="filter-group">
                     <label>Banco:</label>
-                    <select id="filter-bank" onchange="updateScreen()">
-                        <option value="">Todos</option>
-                    </select>
+                    <select id="filter-bank" onchange="updateScreen()"><option value="">Todos</option></select>
                 </div>
             </div>
-
             <small style="color:#28a745; font-size:12px; margin-top:5px;" id="status-indicator">● Online e Seguro</small>
         </header>
 
@@ -180,10 +183,23 @@
                             <div class="form-control half"><label>Banco</label><select id="bank-select"></select></div>
                             <div class="form-control half"><label>Tipo</label><select id="trans-type"><option value="expense">Saída (-)</option><option value="income">Entrada (+)</option></select></div>
                         </div>
-                        <div class="row-inputs">
+                        
+                        <div class="toggle-container">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="is-recurring" onchange="toggleInstallments()">
+                                <span class="slider"></span>
+                            </label>
+                            <span class="toggle-label">É recorrente? (Fixo todo mês)</span>
+                        </div>
+
+                        <div class="row-inputs" id="installments-group">
                             <div class="form-control half"><label>Parcelas</label><input type="number" id="installments" value="1" min="1" max="60"></div>
                             <div class="form-control half"><label>Quem?</label><select id="user-select" onchange="checkUserMethod()"></select></div>
                         </div>
+                        <div class="form-control" id="who-group-standalone" style="display:none">
+                             <label>Quem?</label><select id="user-select-standalone" onchange="syncUserSelect(this)"></select>
+                        </div>
+
                         <div class="form-control">
                             <label>Pagamento</label>
                             <div class="radio-group">
@@ -225,7 +241,7 @@
         const auth = getAuth(app);
         const dbRef = ref(db, 'dados_henrique');
 
-        // --- UI ELEMENTS ---
+        // UI Globals
         const elLoader = document.getElementById('loading-overlay');
         const loginScreen = document.getElementById('login-screen');
         const appContainer = document.getElementById('app-container');
@@ -235,14 +251,19 @@
         const elFilterUser = document.getElementById('filter-user');
         const elFilterBank = document.getElementById('filter-bank');
 
-        // Formulário
+        // Form
         const elTransDate = document.getElementById('trans-date');
         const elUserSelect = document.getElementById('user-select');
+        const elUserSelectStand = document.getElementById('user-select-standalone');
         const elBankSelect = document.getElementById('bank-select');
         const elDesc = document.getElementById('desc');
         const elObs = document.getElementById('obs');
         const elAmount = document.getElementById('amount');
         const elInstallments = document.getElementById('installments');
+        const elRecurring = document.getElementById('is-recurring');
+        const elInstallmentsGroup = document.getElementById('installments-group');
+        const elWhoGroupStand = document.getElementById('who-group-standalone');
+        
         const elEditId = document.getElementById('edit-transaction-id');
         const elBtnSubmit = document.getElementById('btn-submit');
         const elBtnCancel = document.getElementById('btn-cancel');
@@ -301,13 +322,12 @@
             set(dbRef, { users, banks, transactions }).catch(err => alert("Erro ao salvar: " + err.message));
         }
 
-        // --- FUNÇÃO CORRIGIDA DE PARSE DE VALOR (1.000,00 -> 1000.00) ---
         function parseValor(valorStr) {
             let limpo = valorStr.replace(/\./g, '').replace(',', '.');
             return parseFloat(limpo);
         }
 
-        // --- UI ---
+        // --- UI LOGIC ---
         function initUI() {
             if (!users.includes('Henrique')) users.unshift('Henrique');
             if (!elMonthFilter.value) {
@@ -319,6 +339,25 @@
             updateScreen();
         }
 
+        // Toggle Recorrente: Esconde parcelas e mostra "Quem" separado
+        window.toggleInstallments = function() {
+            if (elRecurring.checked) {
+                elInstallmentsGroup.style.display = 'none';
+                elWhoGroupStand.style.display = 'block';
+                // Sincroniza selects
+                elUserSelectStand.value = elUserSelect.value;
+            } else {
+                elInstallmentsGroup.style.display = 'flex';
+                elWhoGroupStand.style.display = 'none';
+                elUserSelect.value = elUserSelectStand.value;
+            }
+        };
+
+        window.syncUserSelect = function(source) {
+            elUserSelect.value = source.value;
+            checkUserMethod();
+        }
+
         // --- SALVAR / EDITAR ---
         document.getElementById('transaction-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -326,56 +365,67 @@
             const rawAmount = elAmount.value;
             const totalAmount = parseValor(rawAmount); 
             const dateInput = elTransDate.value;
-            const installments = parseInt(elInstallments.value) || 1;
+            let installments = 1;
+            const isRecurring = elRecurring.checked;
 
             if (isNaN(totalAmount) || totalAmount <= 0) { alert("Valor inválido"); return; }
             if (!dateInput) { alert("Selecione a data"); return; }
+
+            // Se for recorrente, definimos 12 meses automáticos
+            if (isRecurring) {
+                installments = 12; // Gera para 1 ano
+            } else {
+                installments = parseInt(elInstallments.value) || 1;
+            }
 
             const baseData = {
                 desc: elDesc.value,
                 obs: elObs.value,
                 type: document.getElementById('trans-type').value,
-                user: elUserSelect.value,
+                user: isRecurring ? elUserSelectStand.value : elUserSelect.value,
                 bank: elBankSelect.value,
                 method: document.getElementById('method-credit').checked ? 'credit' : 'debit'
             };
 
             if (elEditId.value) {
-                // MODO EDIÇÃO
-                if (installments > 1) {
-                    if(confirm("Você alterou para " + installments + " parcelas. Isso irá recriar os lançamentos. Confirmar?")) {
+                // EDIÇÃO
+                if (installments > 1 && !isRecurring) {
+                     // Recria parcelas normais
+                    if(confirm("Recriar parcelas?")) {
                         transactions = transactions.filter(t => t.id != elEditId.value);
-                        criarParcelas(baseData, totalAmount, installments, dateInput);
-                    } else {
-                        return;
+                        criarParcelas(baseData, totalAmount, installments, dateInput, false);
                     }
+                } else if (isRecurring) {
+                     // Usuário mudou item único para Recorrente na edição
+                     if(confirm("Transformar em recorrente (próximos 12 meses)?")) {
+                        transactions = transactions.filter(t => t.id != elEditId.value);
+                        criarParcelas(baseData, totalAmount, 12, dateInput, true);
+                     }
                 } else {
+                    // Edição Simples
                     const idx = transactions.findIndex(t => t.id == elEditId.value);
                     if (idx !== -1) {
                         const parts = dateInput.split('-');
                         const displayDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                        
-                        transactions[idx] = { 
-                            ...transactions[idx], 
-                            ...baseData, 
-                            amount: totalAmount, 
-                            date: dateInput, 
-                            displayDate: displayDate 
-                        };
+                        transactions[idx] = { ...transactions[idx], ...baseData, amount: totalAmount, date: dateInput, displayDate: displayDate };
                     }
                 }
                 cancelEdit();
             } else {
-                // MODO CRIAÇÃO
-                criarParcelas(baseData, totalAmount, installments, dateInput);
+                // NOVA CRIAÇÃO
+                criarParcelas(baseData, totalAmount, installments, dateInput, isRecurring);
                 document.getElementById('transaction-form').reset();
                 elInstallments.value = 1;
+                elRecurring.checked = false;
+                toggleInstallments();
             }
             saveData();
         });
 
-        function criarParcelas(data, total, qtd, startDateStr) {
-            const valorParcela = total / qtd;
+        function criarParcelas(data, total, qtd, startDateStr, isRecurring) {
+            // Se for recorrente, o valor é cheio todo mês. Se for parcela, divide.
+            const valorParcela = isRecurring ? total : (total / qtd);
+            
             const parts = startDateStr.split('-');
             const year = parseInt(parts[0]);
             const month = parseInt(parts[1]) - 1;
@@ -386,7 +436,13 @@
                 const isoDate = dt.toISOString().split('T')[0];
                 const ptDate = dt.toLocaleDateString('pt-BR');
                 
-                const descText = qtd > 1 ? `${data.desc} (${i+1}/${qtd})` : data.desc;
+                let descText = data.desc;
+                // Se for recorrente, adiciona flag. Se for parcela > 1, adiciona (1/x)
+                if (isRecurring) {
+                    descText = `${data.desc} (Fixo)`;
+                } else if (qtd > 1) {
+                    descText = `${data.desc} (${i+1}/${qtd})`;
+                }
 
                 transactions.push({
                     id: Date.now() + i,
@@ -394,7 +450,8 @@
                     desc: descText,
                     amount: valorParcela,
                     date: isoDate,
-                    displayDate: ptDate
+                    displayDate: ptDate,
+                    isRecurring: isRecurring // Marca para referência futura
                 });
             }
         }
@@ -405,10 +462,9 @@
             
             let wallet = 0, invoice = 0, bankConsolidation = {};
             const selMonth = elMonthFilter.value;
-            const selUser = elFilterUser.value; // Filtro Pessoa
-            const selBank = elFilterBank.value; // Filtro Banco
+            const selUser = elFilterUser.value;
+            const selBank = elFilterBank.value;
 
-            // Filtro Principal (AND Logic)
             const filtered = transactions
                 .filter(t => {
                     const matchMonth = t.date.startsWith(selMonth);
@@ -418,22 +474,22 @@
                 })
                 .sort((a,b) => a.date.localeCompare(b.date));
 
-            // Renderização e Cálculos com base nos FILTRADOS
             filtered.forEach(t => {
-                // Cálculo de Saldo
                 if (t.type === 'income') wallet += t.amount;
                 if (t.type === 'expense' && t.method === 'debit') wallet -= t.amount;
 
-                // Renderiza Lista
                 const li = document.createElement('li');
                 li.className = t.type === 'income' ? 'income' : (t.method === 'credit' ? 'expense-credit' : 'expense-debit');
                 const sign = t.type === 'expense' ? '-' : '+';
                 const dateShow = t.displayDate || t.date.split('-').reverse().join('/');
                 const descShow = t.desc || 'Sem descrição';
+                
+                // Icone especial se for recorrente
+                const iconRec = t.isRecurring ? '<i class="fas fa-sync-alt" style="font-size:10px; margin-left:5px; color:#666;" title="Recorrente"></i>' : '';
 
                 li.innerHTML = `
                     <div style="flex:1">
-                        <strong style="font-size:14px; color:#333; display:block;">${descShow}</strong>
+                        <strong style="font-size:14px; color:#333; display:block;">${descShow} ${iconRec}</strong>
                         <small style="color:#666">${t.user} | ${t.bank || '-'} | ${dateShow}</small>
                         ${t.obs ? `<br><small style="color:#888; font-style:italic">${t.obs}</small>` : ''}
                     </div>
@@ -446,7 +502,6 @@
                     </div>`;
                 list.prepend(li);
 
-                // Consolida Fatura (Crédito)
                 if (t.type === 'expense' && t.method === 'credit') {
                     invoice += t.amount;
                     const b = t.bank || 'Outros';
@@ -462,9 +517,7 @@
             for (const [bName, data] of Object.entries(bankConsolidation)) {
                 if (data.total > 0) {
                     const li = document.createElement('li'); li.className = 'bank-summary-item';
-                    
                     const dueDate = bankDueDates[bName] ? ` - Dia ${bankDueDates[bName]}` : '';
-                    
                     let html = `<div class="bank-header" style="background:${bankColors[bName]||'#555'}"><span>${bName}${dueDate}</span><span>R$ ${data.total.toFixed(2)}</span></div><div class="bank-people-list">`;
                     for (const [p, v] of Object.entries(data.users)) html += `<div class="bank-person-row"><span>${p}</span><strong>R$ ${v.toFixed(2)}</strong></div>`;
                     li.innerHTML = html + '</div>';
@@ -476,11 +529,21 @@
         window.editTrans = function(id) {
             const t = transactions.find(x => x.id === id); if(!t) return;
             elEditId.value = t.id;
-            elDesc.value = t.desc;
+            elDesc.value = t.desc.replace(' (Fixo)', '').replace(/ \(\d+\/\d+\)/, ''); // Limpa sufixos ao editar
             elObs.value = t.obs || '';
             elAmount.value = t.amount.toFixed(2).replace('.', ',');
             elTransDate.value = t.date;
-            elUserSelect.value = t.user;
+            
+            // Popula os selects corretos
+            if(t.isRecurring) {
+                elRecurring.checked = true;
+                elUserSelectStand.value = t.user;
+            } else {
+                elRecurring.checked = false;
+                elUserSelect.value = t.user;
+            }
+            toggleInstallments();
+
             elBankSelect.value = t.bank;
             document.getElementById('trans-type').value = t.type;
             document.getElementById(t.method === 'credit' ? 'method-credit' : 'method-debit').checked = true;
@@ -490,8 +553,6 @@
             elBtnCancel.style.display = "block";
             
             elInstallments.value = 1; 
-            elInstallments.disabled = false; 
-            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
@@ -502,7 +563,8 @@
             elBtnSubmit.innerText = "Salvar"; 
             elBtnCancel.style.display = "none";
             elInstallments.value = 1;
-            elInstallments.disabled = false;
+            elRecurring.checked = false;
+            toggleInstallments();
         };
 
         window.checkUserMethod = function() { if(elUserSelect.value !== 'Henrique') document.getElementById('method-credit').checked = true; };
@@ -513,29 +575,25 @@
         window.removeTrans = function(id) { if(confirm('Apagar lançamento?')) { transactions=transactions.filter(t=>t.id!==id); saveData(); updateScreen(); } };
 
         function updateDropdowns() {
-            // Atualiza Selects do Formulário
             elUserSelect.innerHTML = ''; 
+            elUserSelectStand.innerHTML = '';
             document.getElementById('users-list-tags').innerHTML = '';
-            
-            // Atualiza Selects do FILTRO
             elFilterUser.innerHTML = '<option value="">Todas</option>';
             elFilterBank.innerHTML = '<option value="">Todos</option>';
 
             users.forEach(u => {
                 elUserSelect.add(new Option(u, u));
-                elFilterUser.add(new Option(u, u)); // Add no filtro
-
+                elUserSelectStand.add(new Option(u, u));
+                elFilterUser.add(new Option(u, u));
                 const div = document.createElement('div'); div.className='tag'; div.innerHTML=`<span>${u}</span><span class="tag-delete" onclick="removeUser('${u}')">&times;</span>`;
                 document.getElementById('users-list-tags').appendChild(div);
             });
 
             elBankSelect.innerHTML = ''; 
             document.getElementById('banks-list').innerHTML = '';
-            
             banks.forEach(b => {
                 elBankSelect.add(new Option(b, b));
-                elFilterBank.add(new Option(b, b)); // Add no filtro
-
+                elFilterBank.add(new Option(b, b));
                 const div = document.createElement('div'); div.className='tag'; div.innerHTML=`<span>${b}</span><span class="tag-delete" onclick="removeBank('${b}')">&times;</span>`;
                 document.getElementById('banks-list').appendChild(div);
             });
