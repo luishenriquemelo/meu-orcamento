@@ -134,6 +134,13 @@
                     <label>Banco:</label>
                     <select id="filter-bank" onchange="updateScreen()"><option value="">Todos</option></select>
                 </div>
+                <div class="filter-group">
+                    <label>Tipo:</label>
+                    <select id="filter-type" onchange="updateScreen()">
+                        <option value="all">Geral</option>
+                        <option value="recurring">Apenas Fixas</option>
+                    </select>
+                </div>
             </div>
             <small style="color:#28a745; font-size:12px; margin-top:5px;" id="status-indicator">● Online e Seguro</small>
         </header>
@@ -250,6 +257,7 @@
         const elMonthFilter = document.getElementById('month-filter');
         const elFilterUser = document.getElementById('filter-user');
         const elFilterBank = document.getElementById('filter-bank');
+        const elFilterType = document.getElementById('filter-type');
 
         // Form
         const elTransDate = document.getElementById('trans-date');
@@ -339,12 +347,10 @@
             updateScreen();
         }
 
-        // Toggle Recorrente: Esconde parcelas e mostra "Quem" separado
         window.toggleInstallments = function() {
             if (elRecurring.checked) {
                 elInstallmentsGroup.style.display = 'none';
                 elWhoGroupStand.style.display = 'block';
-                // Sincroniza selects
                 elUserSelectStand.value = elUserSelect.value;
             } else {
                 elInstallmentsGroup.style.display = 'flex';
@@ -371,9 +377,8 @@
             if (isNaN(totalAmount) || totalAmount <= 0) { alert("Valor inválido"); return; }
             if (!dateInput) { alert("Selecione a data"); return; }
 
-            // Se for recorrente, definimos 12 meses automáticos
             if (isRecurring) {
-                installments = 12; // Gera para 1 ano
+                installments = 12; 
             } else {
                 installments = parseInt(elInstallments.value) || 1;
             }
@@ -388,21 +393,17 @@
             };
 
             if (elEditId.value) {
-                // EDIÇÃO
                 if (installments > 1 && !isRecurring) {
-                     // Recria parcelas normais
                     if(confirm("Recriar parcelas?")) {
                         transactions = transactions.filter(t => t.id != elEditId.value);
                         criarParcelas(baseData, totalAmount, installments, dateInput, false);
                     }
                 } else if (isRecurring) {
-                     // Usuário mudou item único para Recorrente na edição
                      if(confirm("Transformar em recorrente (próximos 12 meses)?")) {
                         transactions = transactions.filter(t => t.id != elEditId.value);
                         criarParcelas(baseData, totalAmount, 12, dateInput, true);
                      }
                 } else {
-                    // Edição Simples
                     const idx = transactions.findIndex(t => t.id == elEditId.value);
                     if (idx !== -1) {
                         const parts = dateInput.split('-');
@@ -412,7 +413,6 @@
                 }
                 cancelEdit();
             } else {
-                // NOVA CRIAÇÃO
                 criarParcelas(baseData, totalAmount, installments, dateInput, isRecurring);
                 document.getElementById('transaction-form').reset();
                 elInstallments.value = 1;
@@ -423,7 +423,6 @@
         });
 
         function criarParcelas(data, total, qtd, startDateStr, isRecurring) {
-            // Se for recorrente, o valor é cheio todo mês. Se for parcela, divide.
             const valorParcela = isRecurring ? total : (total / qtd);
             
             const parts = startDateStr.split('-');
@@ -437,7 +436,6 @@
                 const ptDate = dt.toLocaleDateString('pt-BR');
                 
                 let descText = data.desc;
-                // Se for recorrente, adiciona flag. Se for parcela > 1, adiciona (1/x)
                 if (isRecurring) {
                     descText = `${data.desc} (Fixo)`;
                 } else if (qtd > 1) {
@@ -451,7 +449,7 @@
                     amount: valorParcela,
                     date: isoDate,
                     displayDate: ptDate,
-                    isRecurring: isRecurring // Marca para referência futura
+                    isRecurring: isRecurring 
                 });
             }
         }
@@ -464,13 +462,17 @@
             const selMonth = elMonthFilter.value;
             const selUser = elFilterUser.value;
             const selBank = elFilterBank.value;
+            const selType = elFilterType.value; // Novo Filtro
 
             const filtered = transactions
                 .filter(t => {
                     const matchMonth = t.date.startsWith(selMonth);
                     const matchUser = selUser === "" || t.user === selUser;
                     const matchBank = selBank === "" || t.bank === selBank;
-                    return matchMonth && matchUser && matchBank;
+                    // Lógica Filtro Tipo
+                    const matchType = selType === 'all' || (selType === 'recurring' && t.isRecurring);
+                    
+                    return matchMonth && matchUser && matchBank && matchType;
                 })
                 .sort((a,b) => a.date.localeCompare(b.date));
 
@@ -484,7 +486,6 @@
                 const dateShow = t.displayDate || t.date.split('-').reverse().join('/');
                 const descShow = t.desc || 'Sem descrição';
                 
-                // Icone especial se for recorrente
                 const iconRec = t.isRecurring ? '<i class="fas fa-sync-alt" style="font-size:10px; margin-left:5px; color:#666;" title="Recorrente"></i>' : '';
 
                 li.innerHTML = `
@@ -529,12 +530,11 @@
         window.editTrans = function(id) {
             const t = transactions.find(x => x.id === id); if(!t) return;
             elEditId.value = t.id;
-            elDesc.value = t.desc.replace(' (Fixo)', '').replace(/ \(\d+\/\d+\)/, ''); // Limpa sufixos ao editar
+            elDesc.value = t.desc.replace(' (Fixo)', '').replace(/ \(\d+\/\d+\)/, '');
             elObs.value = t.obs || '';
             elAmount.value = t.amount.toFixed(2).replace('.', ',');
             elTransDate.value = t.date;
             
-            // Popula os selects corretos
             if(t.isRecurring) {
                 elRecurring.checked = true;
                 elUserSelectStand.value = t.user;
